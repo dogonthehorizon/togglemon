@@ -1,0 +1,19 @@
+name:        togglemon
+version:     0.1.0
+synopsis:    A simple program for toggling displays via xrandr.
+github:      dogonthehorizon/togglemon
+license:     MIT
+author:      Fernando Freire
+maintainer:  Fernando Freire <dogonthehorizon@gmail.com>
+copyright:   2019 Fernando Freire
+category:    CLI
+extra-source-files:
+- README.md
+
+dependencies:
+  - base >= 4.7 && < 5
+
+executables:
+  togglemon:
+    source-dirs:      src
+    main:             Main.hs
