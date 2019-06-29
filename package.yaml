@@ -10,8 +10,23 @@ category:    CLI
 extra-source-files:
 - README.md
 
+# TODO move some of the Lens things into in-file declarations.
+default-extensions:
+  - OverloadedStrings
+  - GeneralizedNewtypeDeriving
+  - TemplateHaskell
+  - FlexibleInstances
+  - FlexibleContexts
+  - MultiParamTypeClasses
+  - FunctionalDependencies
+
 dependencies:
   - base >= 4.7 && < 5
+  - text
+  - mtl
+  - lens
+  - directory
+  - filepath
 
 executables:
   togglemon:
