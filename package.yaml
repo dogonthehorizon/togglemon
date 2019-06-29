@@ -10,23 +10,49 @@ category:    CLI
 extra-source-files:
 - README.md
 
-# TODO move some of the Lens things into in-file declarations.
+ghc-options:
+  - -Wall
+  - -Wcompat
+  - -Wincomplete-record-updates
+  - -Wincomplete-uni-patterns
+  - -Wredundant-constraints
+  - -fno-warn-partial-type-signatures
+  - -fno-warn-name-shadowing
+  - -fwarn-tabs
+  - -fwarn-unused-imports
+  - -fwarn-missing-signatures
+  - -fwarn-incomplete-patterns
+
+
 default-extensions:
-  - OverloadedStrings
-  - GeneralizedNewtypeDeriving
-  - TemplateHaskell
-  - FlexibleInstances
+  - BangPatterns
+  - DefaultSignatures
+  - DeriveFoldable
+  - DeriveFunctor
+  - DeriveGeneric
+  - DeriveLift
+  - DeriveTraversable
+  - EmptyCase
   - FlexibleContexts
-  - MultiParamTypeClasses
+  - FlexibleInstances
   - FunctionalDependencies
+  - GeneralizedNewtypeDeriving
+  - InstanceSigs
+  - LambdaCase
+  - MultiParamTypeClasses
+  - MultiWayIf
+  - OverloadedStrings
+  - PatternSynonyms
+  - ScopedTypeVariables
+  - TemplateHaskell
 
 dependencies:
   - base >= 4.7 && < 5
-  - text
-  - mtl
-  - lens
   - directory
   - filepath
+  - lens
+  - mtl
+  - text
 
 executables:
   togglemon:
