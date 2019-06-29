@@ -1,6 +1,8 @@
 module Main where
 
 import Prelude hiding (readFile)
+import Data.Monoid ((<>))
+import Data.Maybe (catMaybes)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
@@ -31,15 +33,21 @@ data Enabled = Enabled | Disabled deriving (Show, Eq)
 type DisplayName = Text
 data Display = Display DisplayName Enabled Status deriving (Show, Eq)
 
--- TODO this is filtering everything, instead of just "version". Woops.
 listDirectory :: (MonadReader env m,
-                    MonadIO m,
-                    HasListDirFn env ListDirectory) => Text -> m [Text]
+                  MonadIO m,
+                  HasListDirFn env ListDirectory) => Text -> m [Text]
 listDirectory path = do
   env <- ask
-  rawDirs <- liftIO $ (env ^. listDirFn) (T.unpack path)
-  dirs <- liftIO $ filterM Dir.doesDirectoryExist $ rawDirs
-  return . fmap T.pack $ dirs
+  (fmap . fmap) T.pack $ liftIO $ (env ^. listDirFn) (T.unpack path)
+
+filterDirectory ::
+  (MonadReader env m,
+   MonadIO m,
+   HasDisplayBasePath env Text) => [Text] -> m [Text]
+filterDirectory dirs = do
+  env <- ask
+  let qualifiedPath p = T.unpack (env ^. displayBasePath) <> T.unpack p
+  liftIO $ filterM (Dir.doesDirectoryExist . qualifiedPath) $ dirs
 
 readFile :: (MonadReader env m,
              MonadIO m,
@@ -88,15 +96,11 @@ toDisplay dName = do
 run :: ToggleMon ()
 run = do
   env <- ask
-  dirs <- listDirectory $ env ^. displayBasePath
-  liftIO $ print dirs
+  rawDirs <- listDirectory $ env ^. displayBasePath
+  dirs <- filterDirectory rawDirs
 
-  (flip mapM_) dirs $ \dName -> do
-    liftIO $ print dName
-
-    display <- toDisplay dName
-
-    liftIO $ print display
+  displays <- catMaybes <$> mapM toDisplay dirs
+  mapM_ (liftIO . print) displays
 
 main :: IO ()
 main = do
