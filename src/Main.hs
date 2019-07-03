@@ -1,9 +1,9 @@
 module Main where
 
-import           Control.Lens           (camelCaseFields, makeLensesWith, (^.))
+import           Control.Lens           ((^.))
 import           Control.Monad          (filterM)
 import           Control.Monad.IO.Class (MonadIO, liftIO)
-import           Control.Monad.Reader   (MonadReader, ReaderT, ask, runReaderT)
+import           Control.Monad.Reader   (MonadReader, ask, runReaderT)
 import           Data.List              (find)
 import           Data.Maybe             (catMaybes)
 import           Data.Monoid            ((<>))
@@ -12,22 +12,7 @@ import qualified Data.Text              as T
 import qualified Data.Text.IO           as TIO
 import           Prelude                hiding (readFile)
 import qualified System.Directory       as Dir
-import           System.FilePath        (FilePath)
-
-type ReadFile = FilePath -> IO Text
-type ListDirectory = FilePath -> IO [FilePath]
-
-data Env = Env {
-  envDisplayBasePath :: Text,
-  envListDirFn       :: !ListDirectory,
-  envReadFileFn      :: !ReadFile
-}
-
-makeLensesWith camelCaseFields ''Env
-
-newtype ToggleMon a = ToggleMon {
-  runToggleMon :: ReaderT Env IO a
-} deriving (Applicative, Functor, Monad, MonadIO, MonadReader Env)
+import           ToggleMon.Monad
 
 data Status = Connected | Disconnected deriving (Show, Eq)
 data Enabled = Enabled | Disabled deriving (Show, Eq)
@@ -113,6 +98,7 @@ getDisabledDisplay = find disabledDisplay
 toXrandrDisplayName :: Text -> Text
 toXrandrDisplayName = T.concat . drop 1 . T.splitOn "-"
 
+-- TODO support setting scaling options per display
 buildXrandrCommand :: DisplaySetup -> Text
 buildXrandrCommand (DisplaySetup (Display activeName _ _) (Display disabledName _ _))
     = "xrandr --output "
