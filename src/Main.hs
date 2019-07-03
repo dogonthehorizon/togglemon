@@ -4,6 +4,7 @@ import           Control.Lens           (camelCaseFields, makeLensesWith, (^.))
 import           Control.Monad          (filterM)
 import           Control.Monad.IO.Class (MonadIO, liftIO)
 import           Control.Monad.Reader   (MonadReader, ReaderT, ask, runReaderT)
+import           Data.List              (find)
 import           Data.Maybe             (catMaybes)
 import           Data.Monoid            ((<>))
 import           Data.Text              (Text)
@@ -95,14 +96,44 @@ toDisplay dName = do
             return . Just $ Display dName (toEnabled enabled) (toStatus status)
         else return Nothing
 
+data DisplaySetup = DisplaySetup Display Display deriving (Show, Eq)
+
+getActiveDisplay :: [Display] -> Maybe Display
+getActiveDisplay = find activeDisplay
+  where
+    activeDisplay (Display _ Enabled Connected) = True
+    activeDisplay _                             = False
+
+getDisabledDisplay :: [Display] -> Maybe Display
+getDisabledDisplay = find disabledDisplay
+  where
+    disabledDisplay (Display _ Disabled Connected) = True
+    disabledDisplay _                              = False
+
+toXrandrDisplayName :: Text -> Text
+toXrandrDisplayName = T.concat . drop 1 . T.splitOn "-"
+
+buildXrandrCommand :: DisplaySetup -> Text
+buildXrandrCommand (DisplaySetup (Display activeName _ _) (Display disabledName _ _))
+    = "xrandr --output "
+        <> toXrandrDisplayName activeName
+        <> " --off --output "
+        <> toXrandrDisplayName disabledName
+        <> " --pos 0x0 --auto --scale 2x2"
+
 run :: ToggleMon ()
 run = do
     env      <- ask
     rawDirs  <- listDirectory $ env ^. displayBasePath
     dirs     <- filterDirectory rawDirs
-
     displays <- catMaybes <$> mapM toDisplay dirs
-    mapM_ (liftIO . print) displays
+
+    (liftIO . print)
+        $   buildXrandrCommand
+        <$> (   DisplaySetup
+            <$> getActiveDisplay displays
+            <*> getDisabledDisplay displays
+            )
 
 main :: IO ()
 main = do
