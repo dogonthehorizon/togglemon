@@ -1,3 +1,4 @@
+-- TODO module header && fn docstrings
 module ToggleMon.Monad where
 
 import Control.Lens           (camelCaseFields, makeLensesWith)
