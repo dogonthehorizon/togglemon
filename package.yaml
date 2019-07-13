@@ -52,6 +52,7 @@ dependencies:
   - filepath
   - lens
   - mtl
+  - process
   - text
 
 executables:
@@ -80,3 +81,4 @@ tests:
       - tasty-hunit
       - tasty-smallcheck
       - text
+      - unordered-containers

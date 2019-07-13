@@ -15,7 +15,6 @@ data Enabled = Enabled | Disabled deriving (Show, Eq)
 type DisplayName = Text
 data Display = Display DisplayName Enabled Status deriving (Show, Eq)
 
-
 toStatus :: Text -> Status
 toStatus s = case s of
     "connected"    -> Connected
