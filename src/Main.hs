@@ -18,12 +18,11 @@ run = do
     dirs     <- filterDirectory rawDirs
     displays <- catMaybes <$> mapM toDisplay dirs
 
-    (liftIO . print)
-        $   buildXrandrCommand
-        <$> (   DisplaySetup
-            <$> getActiveDisplay displays
-            <*> getDisabledDisplay displays
-            )
+    mapM_ (exec . buildXrandrCommand)
+        $   DisplaySetup
+        <$> getActiveDisplay displays
+        <*> getDisabledDisplay displays
+
 
 main :: IO ()
 main = do

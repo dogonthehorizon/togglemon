@@ -77,4 +77,3 @@ buildXrandrCommand (DisplaySetup (Display activeName _ _) (Display disabledName 
         <> " --off --output "
         <> toXrandrDisplayName disabledName
         <> " --pos 0x0 --auto --scale 2x2"
-
