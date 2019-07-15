@@ -11,7 +11,7 @@ import qualified System.Directory       as Dir
 import           ToggleMon.Monad
 
 listDirectory
-    :: (MonadReader env m, MonadIO m, HasListDirFn env ListDirectory)
+    :: (MonadReader env m, MonadIO m, HasListDirFn env ListDirectoryAction)
     => Text
     -> m [Text]
 listDirectory path = do
@@ -28,7 +28,7 @@ filterDirectory dirs = do
     liftIO $ filterM (Dir.doesDirectoryExist . qualifiedPath) dirs
 
 readFile
-    :: (MonadReader env m, MonadIO m, HasReadFileFn env ReadFile)
+    :: (MonadReader env m, MonadIO m, HasReadFileFn env ReadFileAction)
     => Text
     -> m Text
 readFile path = do
@@ -36,7 +36,10 @@ readFile path = do
     contents <- liftIO $ (env ^. readFileFn) (T.unpack path)
     return . T.strip $ contents
 
-exec :: (MonadReader env m, MonadIO m, HasExecFn env Execute) => Text -> m Text
+exec
+    :: (MonadReader env m, MonadIO m, HasExecFn env ExecuteAction)
+    => Text
+    -> m Text
 exec command = do
     env <- ask
     -- TODO this is an incomplete match :(

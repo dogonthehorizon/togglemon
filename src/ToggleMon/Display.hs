@@ -30,8 +30,8 @@ toEnabled s = case s of
 toDisplay
     :: ( MonadReader env m
        , MonadIO m
-       , HasReadFileFn env ReadFile
-       , HasListDirFn env ListDirectory
+       , HasReadFileFn env ReadFileAction
+       , HasListDirFn env ListDirectoryAction
        , HasDisplayBasePath env Text
        )
     => DisplayName

@@ -7,15 +7,15 @@ import Control.Monad.Reader   (MonadReader, ReaderT)
 import Data.Text              (Text)
 import System.FilePath        (FilePath)
 
-type ReadFile      = FilePath -> IO Text
-type ListDirectory = FilePath -> IO [FilePath]
-type Execute       = FilePath -> [String] -> String -> IO String
+type ReadFileAction      = FilePath -> IO Text
+type ListDirectoryAction = FilePath -> IO [FilePath]
+type ExecuteAction       = FilePath -> [String] -> String -> IO String
 
 data Env = Env {
   envDisplayBasePath :: Text,
-  envListDirFn       :: !ListDirectory,
-  envReadFileFn      :: !ReadFile,
-  envExecFn          :: !Execute
+  envListDirFn       :: !ListDirectoryAction,
+  envReadFileFn      :: !ReadFileAction,
+  envExecFn          :: !ExecuteAction
 }
 
 makeLensesWith camelCaseFields ''Env
