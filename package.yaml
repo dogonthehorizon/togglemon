@@ -48,21 +48,30 @@ default-extensions:
 
 dependencies:
   - base >= 4.7 && < 5
-  - directory
-  - filepath
-  - lens
-  - mtl
-  - process
-  - text
-
+  
 executables:
   togglemon:
     source-dirs:      src
     main:             Main.hs
+    dependencies:
+      - directory
+      - filepath
+      - lens
+      - mtl
+      - process
+      - text
+      - bytestring
 
-internal-libraries:
-  togglemon-internal:
-    source-dirs: src
+
+library:
+  source-dirs: edid/src
+  dependencies:
+    - bytestring
+    - cereal
+
+#internal-libraries:
+  #togglemon-internal:
+    #source-dirs: src
 
 tests:
   togglemon-test:
