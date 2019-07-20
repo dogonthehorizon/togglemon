@@ -7,8 +7,6 @@ author:      Fernando Freire
 maintainer:  Fernando Freire <dogonthehorizon@gmail.com>
 copyright:   2019 Fernando Freire
 category:    CLI
-extra-source-files:
-- README.md
 
 ghc-options:
   - -Wall
@@ -22,7 +20,6 @@ ghc-options:
   - -fwarn-unused-imports
   - -fwarn-missing-signatures
   - -fwarn-incomplete-patterns
-
 
 default-extensions:
   - BangPatterns
@@ -48,30 +45,24 @@ default-extensions:
 
 dependencies:
   - base >= 4.7 && < 5
-  
-executables:
-  togglemon:
-    source-dirs:      src
-    main:             Main.hs
-    dependencies:
-      - directory
-      - filepath
-      - lens
-      - mtl
-      - process
-      - text
-      - bytestring
+  - directory
+  - filepath
+  - lens
+  - mtl
+  - process
+  - text
+  - bytestring
 
 
 library:
-  source-dirs: edid/src
-  dependencies:
-    - bytestring
-    - cereal
-
-#internal-libraries:
-  #togglemon-internal:
-    #source-dirs: src
+  source-dirs: src
+  
+executables:
+  togglemon:
+    source-dirs: app
+    main: Main.hs
+    dependencies:
+      - togglemon
 
 tests:
   togglemon-test:
@@ -82,7 +73,7 @@ tests:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
-      - togglemon-internal
+      - togglemon
       - smallcheck
       - smallcheck-series
       - tasty

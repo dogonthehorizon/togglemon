@@ -12,7 +12,7 @@ import qualified Data.ByteString.Lazy.Char8 as BLC
 import           Data.Serialize.Get
 import           Data.Word                  (Word8, Word16, Word64)
 
--- | An EDID header starts with a static 8 byte header.
+-- | An EDID header starts with a static 8 byte sequence.
 --
 -- Failing probably isn't the behavior we want here.
 header :: Get Word64
