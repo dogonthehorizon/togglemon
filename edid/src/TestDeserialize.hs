@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE NamedFieldPuns             #-}
 
 module TestDeserialize where
 
@@ -10,17 +10,17 @@ import qualified Data.ByteString            as BS
 import           Data.ByteString.Lazy       (toStrict)
 import qualified Data.ByteString.Lazy.Char8 as BLC
 import           Data.Serialize.Get
-import           Data.Word                  (Word8, Word16, Word64)
+import           Data.Word                  (Word16, Word64, Word8)
 
 -- | An EDID header starts with a static 8 byte sequence.
 --
 -- Failing probably isn't the behavior we want here.
 header :: Get Word64
 header = do
-  fixedHeader <- getWord64host
-  if 0x00ffffffffffff00 == fixedHeader
-     then return fixedHeader
-     else fail "This doesn't look like an edid"
+    fixedHeader <- getWord64host
+    if 0x00ffffffffffff00 == fixedHeader
+        then return fixedHeader
+        else fail "This doesn't look like an edid"
 
 -- | Get n number of bits from initial position p in the given byte-word w.
 bitSubRange :: (Bits a, Num a) => a -> Int -> Int -> a
@@ -67,24 +67,41 @@ edidVersion 0x1 0x2 = Just V1_2
 edidVersion 0x1 0x3 = Just V1_3
 edidVersion 0x1 0x4 = Just V1_4
 edidVersion 0x2 0x0 = Just V2_0
-edidVersion _ _ = Nothing
+edidVersion _   _   = Nothing
 
 -- | Attempt to parse an EDID binary file
 --
 -- https://en.wikipedia.org/wiki/Extended_Display_Identification_Data#Structure,_version_1.4
 -- https://www.extron.com/article/uedid
-parseEdid :: Get (String, ByteString, Integer, Integer, Integer, Integer, Maybe EdidVersion)
+parseEdid
+    :: Get
+           ( String
+           , ByteString
+           , Integer
+           , Integer
+           , Integer
+           , Integer
+           , Maybe EdidVersion
+           )
 parseEdid = do
-    _ <- header -- TODO ensure that this is correct header from spec.
-    mId <- parseManufacturerId
-    mCode <- parseManufacturerCode
-    serial <- parseSerialId
+    _         <- header -- TODO ensure that this is correct header from spec.
+    mId       <- parseManufacturerId
+    mCode     <- parseManufacturerCode
+    serial    <- parseSerialId
     weekOfMan <- fromIntegral <$> getWord8
     yearOfMan <- (+ 1990) . fromIntegral <$> getWord8
-    versMaj <- getWord8
-    versMin <- getWord8
-    rem <- ("Remaining: " ++) . show <$> remaining
-    return (rem, mId, mCode, serial, weekOfMan, yearOfMan, edidVersion versMaj versMin)
+    versMaj   <- getWord8
+    versMin   <- getWord8
+    rem       <- ("Remaining: " ++) . show <$> remaining
+    return
+        ( rem
+        , mId
+        , mCode
+        , serial
+        , weekOfMan
+        , yearOfMan
+        , edidVersion versMaj versMin
+        )
 
 -- | Test the thing in a REPL
 testies :: FilePath -> IO ()

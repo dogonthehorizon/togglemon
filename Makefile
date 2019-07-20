@@ -8,26 +8,29 @@
 clean:
 	@stack clean
 
+PATH_GLOB=*/{app,src,test}
+FIND_CMD=fd
+
 # This should only need to be done once per developer machine.
 setup: clean
 	stack build --no-docker --copy-compiler-tool stylish-haskell hlint apply-refact
 
 _HLINT=hlint {} \;
 hlint:
-	@find {src,edid/src}/ -name "*.hs" -exec $(_HLINT)
+	@fd -e hs . ${PATH_GLOB} -x $(_HLINT)
 
 _STYLISH=stylish-haskell -i {} \;
 stylish-haskell:
-	@find {src,edid/src}/ -name "*.hs" -exec $(_STYLISH)
+	@fd -e hs . ${PATH_GLOB} -x $(_STYLISH)
 
 _BRITTANY=brittany --write-mode=inplace {} \;
 brittany:
-	@find {src,edid/src}/ -name "*.hs" -exec $(_BRITTANY)
+	@fd -e hs . ${PATH_GLOB} -x $(_BRITTANY)
 
 lint-all: stylish-haskell hlint brittany
 
 test:
-	stack test --test-arguments "--color always"
+	@stack test --test-arguments "--color always"
 
 deploy: clean
 	@stack build --copy-bins && ./deploy.sh
