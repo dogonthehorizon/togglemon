@@ -52,6 +52,7 @@ library:
   dependencies:
     - bytestring
     - cereal
+    - text
 
 tests:
   edid-test:

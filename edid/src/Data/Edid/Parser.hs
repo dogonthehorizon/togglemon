@@ -10,6 +10,7 @@ import qualified Data.Edid.Parser.Util      as Util
 import           Data.Edid.Types
 import           Data.Serialize.Get
 import           Data.Word                  (Word16, Word64)
+import Control.Monad (liftM2)
 
 -- | An EDID header starts with a static 8 byte sequence.
 --
@@ -60,8 +61,7 @@ parseSerialId = fromIntegral <$> getWord32le
 parseEdid
     :: Get
            ( String
-           , ByteString
-           , Integer
+           , Manufacturer
            , Integer
            , Integer
            , Integer
@@ -69,8 +69,7 @@ parseEdid
            )
 parseEdid = do
     _         <- fixedPreamble
-    mId       <- parseManufacturerId
-    mCode     <- parseManufacturerCode
+    mftr      <- liftM2 manufacturer parseManufacturerId parseManufacturerCode
     serial    <- parseSerialId
     weekOfMan <- fromIntegral <$> getWord8
     yearOfMan <- (+ 1990) . fromIntegral <$> getWord8
@@ -79,8 +78,7 @@ parseEdid = do
     rem       <- ("Remaining: " ++) . show <$> remaining
     return
         ( rem
-        , mId
-        , mCode
+        , mftr
         , serial
         , weekOfMan
         , yearOfMan
