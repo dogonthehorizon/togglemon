@@ -1,73 +1,57 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE NamedFieldPuns             #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
-module TestDeserialize where
+module Data.Edid.Parser where
 
-import           Data.Bits                  (Bits, complement, shiftL, shiftR,
-                                             (.&.))
 import           Data.ByteString            (ByteString)
 import qualified Data.ByteString            as BS
 import           Data.ByteString.Lazy       (toStrict)
 import qualified Data.ByteString.Lazy.Char8 as BLC
+import qualified Data.Edid.Parser.Util      as Util
+import           Data.Edid.Types
 import           Data.Serialize.Get
-import           Data.Word                  (Word16, Word64, Word8)
+import           Data.Word                  (Word16, Word64)
 
 -- | An EDID header starts with a static 8 byte sequence.
 --
 -- Failing probably isn't the behavior we want here.
-header :: Get Word64
-header = do
+fixedPreamble :: Get Word64
+fixedPreamble = do
     fixedHeader <- getWord64host
     if 0x00ffffffffffff00 == fixedHeader
         then return fixedHeader
         else fail "This doesn't look like an edid"
 
--- | Get n number of bits from initial position p in the given byte-word w.
-bitSubRange :: (Bits a, Num a) => a -> Int -> Int -> a
-bitSubRange w p n =
-    w `shiftR` (p + 1 - n) .&. complement (complement 0 `shiftL` n)
-
 -- | A manufacturer id is comprised of three letters, each defined in 5 bits.
 --
--- A list of PNP manufacturer id can be found here:
+-- A list of PNP manufacturer ids can be found here:
 -- https://uefi.org/pnp_id_list
---
--- TODO use of !! isn't total, consider changing to reduce chance of surprise.
-manufacturerId :: Word16 -> ByteString
+manufacturerId :: Word16 -> Maybe ByteString
 manufacturerId w =
-    toStrict
-        . BLC.pack
-        . fmap charIdx
+    fmap (toStrict . BLC.pack)
+        . traverse (Util.intToUpperChar . fromIntegral)
         $ [getBitsAt 14, getBitsAt 9, getBitsAt 4]
-  where
-    getBitsAt i = bitSubRange w i 5
-    charIdx w = ['A' .. 'Z'] !! fromIntegral (w - 1)
+    where getBitsAt i = Util.bitSubRange w i 5
 
 -- | Parse a manufacturer id from the given binary input.
 parseManufacturerId :: Get ByteString
-parseManufacturerId = manufacturerId <$> getWord16be
+parseManufacturerId = do
+    word <- getWord16be
+    case manufacturerId word of
+        Nothing -> fail "Could not parse word as manufacturer id"
+        Just a  -> return a
 
 -- | Parse a manufacturer's code from the input.
+--
+-- TODO validate that this is correctly parsing
 parseManufacturerCode :: Get Integer
 parseManufacturerCode = fromIntegral <$> getWord16le
 
 -- | Parse the serial id for this device.
+--
+-- TODO validate that this is correctly parsing
 parseSerialId :: Get Integer
 parseSerialId = fromIntegral <$> getWord32le
   -- toStrict . toLazyByteString . word32LE <$> getWord32le
-
-
-data EdidVersion = V1_0 | V1_1 | V1_2 | V1_3 | V1_4 | V2_0
-  deriving (Show, Eq, Ord)
-
-edidVersion :: Word8 -> Word8 -> Maybe EdidVersion
-edidVersion 0x1 0x0 = Just V1_0
-edidVersion 0x1 0x1 = Just V1_1
-edidVersion 0x1 0x2 = Just V1_2
-edidVersion 0x1 0x3 = Just V1_3
-edidVersion 0x1 0x4 = Just V1_4
-edidVersion 0x2 0x0 = Just V2_0
-edidVersion _   _   = Nothing
 
 -- | Attempt to parse an EDID binary file
 --
@@ -84,7 +68,7 @@ parseEdid
            , Maybe EdidVersion
            )
 parseEdid = do
-    _         <- header -- TODO ensure that this is correct header from spec.
+    _         <- fixedPreamble
     mId       <- parseManufacturerId
     mCode     <- parseManufacturerCode
     serial    <- parseSerialId
