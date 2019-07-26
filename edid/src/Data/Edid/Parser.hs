@@ -1,7 +1,34 @@
-{-# LANGUAGE NamedFieldPuns #-}
+{-|
+Module : Data.Edid.Parser
+Description : Parser combinators and functions for EDID blobs
+Copyright : (c) Fernando Freire, 2019
+License : MIT
+Maintainer : Fernando Freire
+Stability : experimental
 
-module Data.Edid.Parser where
+This module provides parser combinators and functions for parsing EDID
+blobs. There are a few versions of the EDID spec, this module focuses on 1.4
+as outlined in this page:
 
+https://en.wikipedia.org/wiki/Extended_Display_Identification_Data#Structure,_version_1.4
+
+Supposedly the spec is forwards compatible, but I don't have enough monitors
+to test whether that is the case or not.
+
+TODO provide typical usage instructions once the API is a bit more stable.
+-}
+module Data.Edid.Parser (
+  parseEdid,
+  fixedPreamble,
+  parseManufacturerId,
+  parseManufacturerCode,
+  parseSerialId,
+  manufacturerId,
+  -- TODO remove or refactor
+  testies
+) where
+
+import           Control.Monad              (liftM2)
 import           Data.ByteString            (ByteString)
 import qualified Data.ByteString            as BS
 import           Data.ByteString.Lazy       (toStrict)
@@ -10,26 +37,24 @@ import qualified Data.Edid.Parser.Util      as Util
 import           Data.Edid.Types
 import           Data.Serialize.Get
 import           Data.Word                  (Word16, Word64)
-import Control.Monad (liftM2)
 
 -- | An EDID header starts with a static 8 byte sequence.
---
--- Failing probably isn't the behavior we want here.
 fixedPreamble :: Get Word64
 fixedPreamble = do
     fixedHeader <- getWord64host
     if 0x00ffffffffffff00 == fixedHeader
         then return fixedHeader
-        else fail "This doesn't look like an edid"
+        else fail
+            "Didn't find static EDID header, are we reading the right file?"
 
--- | A manufacturer id is comprised of three letters, each defined in 5 bits.
+-- | A manufacturer id is comprised of three letters, each defined in five bits.
 --
 -- A list of PNP manufacturer ids can be found here:
 -- https://uefi.org/pnp_id_list
 manufacturerId :: Word16 -> Maybe ByteString
 manufacturerId w =
     fmap (toStrict . BLC.pack)
-        . traverse (Util.intToUpperChar . fromIntegral)
+        . traverse (Util.intToAscii . fromIntegral)
         $ [getBitsAt 14, getBitsAt 9, getBitsAt 4]
     where getBitsAt i = Util.bitSubRange w i 5
 
@@ -59,14 +84,7 @@ parseSerialId = fromIntegral <$> getWord32le
 -- https://en.wikipedia.org/wiki/Extended_Display_Identification_Data#Structure,_version_1.4
 -- https://www.extron.com/article/uedid
 parseEdid
-    :: Get
-           ( String
-           , Manufacturer
-           , Integer
-           , Integer
-           , Integer
-           , Maybe EdidVersion
-           )
+    :: Get (String, Manufacturer, Integer, Integer, Integer, Maybe EdidVersion)
 parseEdid = do
     _         <- fixedPreamble
     mftr      <- liftM2 manufacturer parseManufacturerId parseManufacturerCode
@@ -77,13 +95,7 @@ parseEdid = do
     versMin   <- getWord8
     rem       <- ("Remaining: " ++) . show <$> remaining
     return
-        ( rem
-        , mftr
-        , serial
-        , weekOfMan
-        , yearOfMan
-        , edidVersion versMaj versMin
-        )
+        (rem, mftr, serial, weekOfMan, yearOfMan, edidVersion versMaj versMin)
 
 -- | Test the thing in a REPL
 testies :: FilePath -> IO ()
