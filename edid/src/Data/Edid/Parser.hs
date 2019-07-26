@@ -79,21 +79,35 @@ parseSerialId :: Get Integer
 parseSerialId = fromIntegral <$> getWord32le
   -- toStrict . toLazyByteString . word32LE <$> getWord32le
 
+parseVersion :: Get EdidVersion
+parseVersion = do
+    major <- getWord8
+    minor <- getWord8
+
+    case mkEdidVersion major minor of
+        Just version -> return version
+        Nothing ->
+            fail
+                $  "Unable to parse edid version, got bytes: '"
+                <> show major
+                <> "' '"
+                <> show minor
+                <> "'"
+
 -- | Attempt to parse an EDID binary file
 --
 -- https://en.wikipedia.org/wiki/Extended_Display_Identification_Data#Structure,_version_1.4
 -- https://www.extron.com/article/uedid
-parseEdid
-    :: Get (String, Manufacturer, Integer, Integer, Integer, Maybe EdidVersion)
+parseEdid :: Get Edid
 parseEdid = do
-    _         <- fixedPreamble
-    mftr      <- liftM2 manufacturer parseManufacturerId parseManufacturerCode
-    serial    <- parseSerialId
-    weekOfMan <- fromIntegral <$> getWord8
-    yearOfMan <- (+ 1990) . fromIntegral <$> getWord8
-    version   <- liftM2 edidVersion getWord8 getWord8
-    rem       <- ("Remaining: " ++) . show <$> remaining
-    return (rem, mftr, serial, weekOfMan, yearOfMan, version)
+    _ <- fixedPreamble
+
+    Edid
+        <$> (liftM2 mkManufacturuer parseManufacturerId parseManufacturerCode)
+        <*> parseSerialId
+        <*> (fromIntegral <$> getWord8)
+        <*> (mkYearOfManufacture <$> getWord8)
+        <*> parseVersion
 
 -- | Test the thing in a REPL
 testies :: FilePath -> IO ()

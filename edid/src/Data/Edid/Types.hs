@@ -17,21 +17,32 @@ import           Data.Word          (Word8)
 
 -- | Version of the EDID spec.
 data EdidVersion = V1_0 | V1_1 | V1_2 | V1_3 | V1_4 | V2_0
-  deriving (Show, Eq, Ord)
+  deriving (Show, Eq)
 
 -- | Constructs an EDID version.
-edidVersion :: Word8 -> Word8 -> Maybe EdidVersion
-edidVersion 0x1 0x0 = Just V1_0
-edidVersion 0x1 0x1 = Just V1_1
-edidVersion 0x1 0x2 = Just V1_2
-edidVersion 0x1 0x3 = Just V1_3
-edidVersion 0x1 0x4 = Just V1_4
-edidVersion 0x2 0x0 = Just V2_0
-edidVersion _   _   = Nothing
+mkEdidVersion :: Word8 -> Word8 -> Maybe EdidVersion
+mkEdidVersion 0x1 0x0 = Just V1_0
+mkEdidVersion 0x1 0x1 = Just V1_1
+mkEdidVersion 0x1 0x2 = Just V1_2
+mkEdidVersion 0x1 0x3 = Just V1_3
+mkEdidVersion 0x1 0x4 = Just V1_4
+mkEdidVersion 0x2 0x0 = Just V2_0
+mkEdidVersion _   _   = Nothing
 
 -- | Manufacturer information provided by an EDID blob.
-data Manufacturer = Manufacturer Text Integer deriving (Show)
+data Manufacturer = Manufacturer Text Integer deriving (Show, Eq)
 
 -- | Constructs a Manufacturer value.
-manufacturer :: ByteString -> Integer -> Manufacturer
-manufacturer b = Manufacturer (TE.decodeUtf8 b)
+mkManufacturuer :: ByteString -> Integer -> Manufacturer
+mkManufacturuer b = Manufacturer (TE.decodeUtf8 b)
+
+mkYearOfManufacture :: Word8 -> Integer
+mkYearOfManufacture = (+ 1990) . fromIntegral
+
+data Edid = Edid {
+  manufacturer      :: Manufacturer,
+  serialNumber      :: Integer, -- TODO for now
+  weekOfManufacture :: Integer, -- TODO for now
+  yearOfManufacture :: Integer,
+  version           :: EdidVersion
+} deriving (Show, Eq)
