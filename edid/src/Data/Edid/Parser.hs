@@ -91,11 +91,9 @@ parseEdid = do
     serial    <- parseSerialId
     weekOfMan <- fromIntegral <$> getWord8
     yearOfMan <- (+ 1990) . fromIntegral <$> getWord8
-    versMaj   <- getWord8
-    versMin   <- getWord8
+    version   <- liftM2 edidVersion getWord8 getWord8
     rem       <- ("Remaining: " ++) . show <$> remaining
-    return
-        (rem, mftr, serial, weekOfMan, yearOfMan, edidVersion versMaj versMin)
+    return (rem, mftr, serial, weekOfMan, yearOfMan, version)
 
 -- | Test the thing in a REPL
 testies :: FilePath -> IO ()
