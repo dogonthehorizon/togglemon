@@ -7,6 +7,10 @@ Maintainer : Fernando Freire
 Stability : experimental
 
 Types that represent various bits in an EDID blob.
+
+Depending on how much information we feel like parsing we could extend this type
+quite a bit to also provide available resolutions and such. If that becomes a
+viable option then that extends the value of the downstream `togglemon` project.
 -}
 module Data.Edid.Types where
 

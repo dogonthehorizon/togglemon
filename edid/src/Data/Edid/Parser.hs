@@ -103,7 +103,7 @@ parseEdid = do
     _ <- fixedPreamble
 
     Edid
-        <$> (liftM2 mkManufacturuer parseManufacturerId parseManufacturerCode)
+        <$> liftM2 mkManufacturuer parseManufacturerId parseManufacturerCode
         <*> parseSerialId
         <*> (fromIntegral <$> getWord8)
         <*> (mkYearOfManufacture <$> getWord8)
@@ -113,4 +113,6 @@ parseEdid = do
 testies :: FilePath -> IO ()
 testies fp = do
     file <- BS.readFile fp
-    print $ runGet parseEdid file
+    case runGet parseEdid file of
+        Right v -> print v
+        Left  e -> putStrLn $ "Got an error:\n\t" ++ show e
