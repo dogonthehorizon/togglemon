@@ -1,8 +1,10 @@
 module ToggleMon.DisplayTest where
 
+import Data.Maybe (fromMaybe)
 import           Test.Tasty        (testGroup)
-import           Test.Tasty.HUnit  (testCase, (@?=))
+import           Test.Tasty.HUnit  (testCase, (@?=), assertFailure)
 import qualified ToggleMon.Display as Display
+import TestUtils
 
 test_toStatus = testGroup
     "toStatus"
@@ -24,3 +26,12 @@ test_toEnabled = testGroup
     $   Display.toEnabled "disabled"
     @?= Display.Disabled
     ]
+
+test_toDisplay = testGroup "toDisplay" [
+    testCase "happy path" $
+      -- TODO in theory this is what we want to do. Currently failing to compile.
+      --      Perhaps there's something in tasty that let's us run monadic things
+      runTestMonad $ do
+        mDisplay <- Display.toDisplay "card0-eDP-1"
+        (fromMaybe (assertFailure "boo boo") mDisplay) @?= (Display.Display "card0-eDP-1" Display.Enabled Display.Connected)
+  ]
