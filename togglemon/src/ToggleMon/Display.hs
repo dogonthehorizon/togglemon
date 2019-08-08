@@ -1,4 +1,10 @@
--- TODO module header && fn docstrings
+{-|
+Module : ToggleMon.Display
+Description : Functions and types for managing DRM displays.
+Copyright : (c) Fernando Freire, 2019
+Maintainer : Fernando Freire
+Stability : stable
+-}
 module ToggleMon.Display where
 
 import           Control.Lens           ((^.))
@@ -10,17 +16,42 @@ import qualified Data.Text              as T
 import qualified ToggleMon.IO           as ToggleIO
 import           ToggleMon.Monad
 
+-- | The connection status of a display.
 data Status = Connected | Disconnected deriving (Show, Eq)
+
+-- | The usage status of a display.
 data Enabled = Enabled | Disabled deriving (Show, Eq)
+
+-- | 'Text' alias for a display's name.
 type DisplayName = Text
+
+-- | Representation of a single DRM display.
 data Display = Display DisplayName Enabled Status deriving (Show, Eq)
 
+-- | Represenation of an active/passive display setup.
+--
+-- This is the originaly configuration strategy for togglemon. The first
+-- display represents the currently active display while the second represents
+-- a passive display that is connected. When triggered, the passive display
+-- will be configured and swapped with the active display.
+data ActivePassiveDisplayConfiguration =
+  ActivePassiveDisplayConfiguration
+    Display -- ^ The currently active display.
+    Display -- ^ The connected, passive display.
+    deriving (Show, Eq)
+
+-- | Construct a 'Status'.
+--
+-- TODO convert to total function.
 toStatus :: Text -> Status
 toStatus s = case s of
     "connected"    -> Connected
     "disconnected" -> Disconnected
     _              -> error "shouldn't happen"
 
+-- | Construct an 'Enabled' value.
+--
+-- TODO convert to total function.
 toEnabled :: Text -> Enabled
 toEnabled s = case s of
     "enabled"  -> Enabled
@@ -52,8 +83,6 @@ toDisplay dName = do
             return . Just $ Display dName (toEnabled enabled) (toStatus status)
         else return Nothing
 
-data DisplaySetup = DisplaySetup Display Display deriving (Show, Eq)
-
 getActiveDisplay :: [Display] -> Maybe Display
 getActiveDisplay = find activeDisplay
   where
@@ -70,8 +99,8 @@ toXrandrDisplayName :: Text -> Text
 toXrandrDisplayName = T.concat . drop 1 . T.splitOn "-"
 
 -- TODO support setting scaling options per display
-buildXrandrCommand :: DisplaySetup -> Text
-buildXrandrCommand (DisplaySetup (Display activeName _ _) (Display disabledName _ _))
+buildXrandrCommand :: ActivePassiveDisplayConfiguration -> Text
+buildXrandrCommand (ActivePassiveDisplayConfiguration (Display activeName _ _) (Display disabledName _ _))
     = "xrandr --output "
         <> toXrandrDisplayName activeName
         <> " --off --output "

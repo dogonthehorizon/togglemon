@@ -18,7 +18,7 @@ run = do
     displays <- catMaybes <$> mapM toDisplay dirs
 
     mapM_ (exec . buildXrandrCommand)
-        $   DisplaySetup
+        $   ActivePassiveDisplayConfiguration
         <$> getActiveDisplay displays
         <*> getDisabledDisplay displays
 

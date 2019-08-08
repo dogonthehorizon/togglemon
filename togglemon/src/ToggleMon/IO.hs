@@ -25,6 +25,8 @@ filterDirectory
 filterDirectory dirs = do
     env <- ask
     let qualifiedPath p = T.unpack (env ^. displayBasePath) <> T.unpack p
+    -- TODO the fn from Dir needs to be lifted into the Env reader so it can
+    --      be mocked.
     liftIO $ filterM (Dir.doesDirectoryExist . qualifiedPath) dirs
 
 readFile
