@@ -4,6 +4,12 @@ A small program for toggling monitors in Linux. Ideal use case is a laptop
 with a single video card and single external display. Works best when triggered
 via a udev event for automatic display management.
 
+### Articles
+
+The following articles have been written about `togglemon`:
+
+- [Over-Engineering a Display Toggle for Great Good][toggleintro]
+
 ## Motivation
 
 I used to have a few shell scripts to manually toggle the displays using
@@ -105,3 +111,4 @@ prancing-pangolin:
 [Direct Rendering Manager]: https://en.wikipedia.org/wiki/Direct_Rendering_Manager
 [`sysfs`]: https://en.wikipedia.org/wiki/Sysfs
 [edid]: https://en.wikipedia.org/wiki/Extended_Display_Identification_Data#EDID_1.4_data_format
+[toggleintro]: https://dogonthehorizon.com/posts/2019/08/06/over-engineering-a-display-toggle-for-great-good/
