@@ -1,43 +1,85 @@
 module ToggleMon.DisplayTest where
 
-import           Data.Maybe        (fromMaybe)
-import           Test.Tasty        (testGroup)
-import           Test.Tasty.HUnit  (assertFailure, testCase, (@?=))
+import           Data.Maybe                               (fromMaybe)
+import           Test.Tasty                               (testGroup)
+import           Test.Tasty.HUnit                         (testCase, (@?=))
+import           Test.Tasty.SmallCheck                    (testProperty)
 import           TestUtils
-import qualified ToggleMon.Display as Display
+import qualified ToggleMon.Display                        as Display
+import           ToggleMon.Test.Smallcheck.Series.Display ()
 
 test_toStatus = testGroup
     "toStatus"
     [ testCase "serialize connected"
     $   Display.toStatus "connected"
-    @?= Display.Connected
+    @?= Just Display.Connected
     , testCase "serialize disconnected"
     $   Display.toStatus "disconnected"
-    @?= Display.Disconnected
-    -- TODO have a test case that captures exceptions
+    @?= Just Display.Disconnected
+    , testCase "fail with garbage data"
+    $   Display.toStatus "a;sdfasdf"
+    @?= Nothing
     ]
 
 test_toEnabled = testGroup
     "toEnabled"
     [ testCase "serialize enabled"
     $   Display.toEnabled "enabled"
-    @?= Display.Enabled
+    @?= Just Display.Enabled
     , testCase "serialize disabled"
     $   Display.toEnabled "disabled"
-    @?= Display.Disabled
+    @?= Just Display.Disabled
+    , testCase "fail with garbage data"
+    $   Display.toEnabled "a;sdfasdf"
+    @?= Nothing
     ]
 
 test_toDisplay = testGroup
     "toDisplay"
     [ testCase "should properly serialize a known monitor" $ do
-          let def = Display.Display "" Display.Disabled Display.Disconnected
-          let
-              expected = Display.Display
-                  "card0-eDP-1"
-                  Display.Enabled
-                  Display.Connected
+        let
+            expected =
+                Display.Display "card0-eDP-1" Display.Enabled Display.Connected
 
-          result <- runTestMonad $ Display.toDisplay "card0-eDP-1"
+        result <- runTestMonad $ Display.toDisplay "card0-eDP-1"
 
-          fromMaybe def result @?= expected
+        fromMaybe defaultDisplay result @?= expected
+    , testCase "should return nothing if display is not found" $ do
+        result <- runTestMonad $ Display.toDisplay "does not exist"
+        result @?= Nothing
+    , testCase "should return nothing if status/enabled files have garbage" $ do
+        result <- runTestMonad $ Display.toDisplay "card0-DP-bad-data"
+        result @?= Nothing
+    ]
+
+test_getActiveDisplay = testGroup
+    "getActiveDisplay"
+    [ testProperty "should get the first active display if connected/enabled"
+          $ \(displays :: [Display.Display]) ->
+                let
+                    enabledDisplays = filter
+                        (\case
+                            Display.Display _ Display.Enabled Display.Connected
+                                -> True
+                            _ -> False
+                        )
+                        displays
+                in Display.getActiveDisplay displays == safeHead enabledDisplays
+    ]
+
+test_getDisabledDisplay = testGroup
+    "getDisabledDisplay"
+    [ testProperty "should get the first passive display if disabled/connected"
+          $ \(displays :: [Display.Display]) ->
+                let
+                    disabledDisplays = filter
+                        (\case
+                            Display.Display _ Display.Disabled Display.Connected
+                                -> True
+                            _ -> False
+                        )
+                        displays
+                in
+                    Display.getDisabledDisplay displays
+                        == safeHead disabledDisplays
     ]

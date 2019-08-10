@@ -8,7 +8,14 @@ import           Data.Text            (Text)
 import qualified Data.Text            as T
 import           Prelude              hiding (readFile)
 import           System.FilePath      (FilePath)
+import           ToggleMon.Display    (Display (..), Enabled (..), Status (..))
 import           ToggleMon.Monad      (Env (..), ToggleMon (..))
+
+safeHead :: [a] -> Maybe a
+safeHead xs = if not (null xs) then Just $ head xs else Nothing
+
+defaultDisplay :: Display
+defaultDisplay = Display "" Disabled Disconnected
 
 singleDisplay :: Text -> Text -> HashMap FilePath Text
 singleDisplay status enabled =
@@ -16,9 +23,10 @@ singleDisplay status enabled =
 
 displays :: HashMap FilePath (HashMap FilePath Text)
 displays = Map.fromList
-    [ ("card0-eDP-1", singleDisplay "connected" "enabled")
-    , ("card0-DP-1" , singleDisplay "connected" "disabled")
-    , ("card0-DP-2" , singleDisplay "disconnected" "disabled")
+    [ ("card0-eDP-1"      , singleDisplay "connected" "enabled")
+    , ("card0-DP-1"       , singleDisplay "connected" "disabled")
+    , ("card0-DP-2"       , singleDisplay "disconnected" "disabled")
+    , ("card0-DP-bad-data", singleDisplay "foo" "bar")
     ]
 
 listDirectory :: FilePath -> IO [FilePath]

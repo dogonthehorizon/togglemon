@@ -41,22 +41,18 @@ data ActivePassiveDisplayConfiguration =
     deriving (Show, Eq)
 
 -- | Construct a 'Status'.
---
--- TODO convert to total function.
-toStatus :: Text -> Status
+toStatus :: Text -> Maybe Status
 toStatus s = case s of
-    "connected"    -> Connected
-    "disconnected" -> Disconnected
-    _              -> error "shouldn't happen"
+    "connected"    -> Just Connected
+    "disconnected" -> Just Disconnected
+    _              -> Nothing
 
 -- | Construct an 'Enabled' value.
---
--- TODO convert to total function.
-toEnabled :: Text -> Enabled
+toEnabled :: Text -> Maybe Enabled
 toEnabled s = case s of
-    "enabled"  -> Enabled
-    "disabled" -> Disabled
-    _          -> error "shouldn't happen"
+    "enabled"  -> Just Enabled
+    "disabled" -> Just Disabled
+    _          -> Nothing
 
 toDisplay
     :: ( MonadReader env m
@@ -80,7 +76,7 @@ toDisplay dName = do
             enabled <- ToggleIO.readFile
                 $ T.concat [displayPath, "/", "enabled"]
 
-            return . Just $ Display dName (toEnabled enabled) (toStatus status)
+            return $ Display dName <$> toEnabled enabled <*> toStatus status
         else return Nothing
 
 getActiveDisplay :: [Display] -> Maybe Display
