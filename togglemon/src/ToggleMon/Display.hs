@@ -70,14 +70,21 @@ toDisplay dName = do
 
     displayContents <- ToggleIO.listDirectory displayPath
 
-    if "status" `elem` displayContents && "enabled" `elem` displayContents
-        then do
-            status  <- ToggleIO.readFile $ T.concat [displayPath, "/", "status"]
-            enabled <- ToggleIO.readFile
-                $ T.concat [displayPath, "/", "enabled"]
+    case displayContents of
+        Nothing -> return Nothing
+        Just contents ->
+            if "status" `elem` contents && "enabled" `elem` contents
+                then do
+                    status <- ToggleIO.readFile
+                        $ T.concat [displayPath, "/", "status"]
+                    enabled <- ToggleIO.readFile
+                        $ T.concat [displayPath, "/", "enabled"]
 
-            return $ Display dName <$> toEnabled enabled <*> toStatus status
-        else return Nothing
+                    return
+                        $   Display dName
+                        <$> toEnabled enabled
+                        <*> toStatus status
+                else return Nothing
 
 getActiveDisplay :: [Display] -> Maybe Display
 getActiveDisplay = find activeDisplay

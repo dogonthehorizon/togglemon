@@ -59,3 +59,6 @@ mockEnv = Env
 
 runTestMonad :: ToggleMon a -> IO a
 runTestMonad fn = runReaderT (runToggleMon fn) mockEnv
+
+runTestMonad' :: Env -> ToggleMon a -> IO a
+runTestMonad' e fn = runReaderT (runToggleMon fn) e

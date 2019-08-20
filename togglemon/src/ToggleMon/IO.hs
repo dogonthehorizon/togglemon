@@ -1,6 +1,7 @@
 -- TODO module header && fn docstrings
 module ToggleMon.IO where
 
+import           Control.Exception      (SomeException (..), try)
 import           Control.Lens           ((^.))
 import           Control.Monad          (filterM)
 import           Control.Monad.IO.Class (MonadIO, liftIO)
@@ -13,10 +14,13 @@ import           ToggleMon.Monad
 listDirectory
     :: (MonadReader env m, MonadIO m, HasListDirFn env ListDirectoryAction)
     => Text
-    -> m [Text]
+    -> m (Maybe [Text])
 listDirectory path = do
-    env <- ask
-    (fmap . fmap) T.pack $ liftIO $ (env ^. listDirFn) (T.unpack path)
+    env               <- ask
+    directoryContents <- liftIO . try $ (env ^. listDirFn) (T.unpack path)
+    return
+      $ either (\(SomeException _) -> Nothing) Just
+      $ (fmap . fmap) T.pack directoryContents
 
 filterDirectory
     :: (MonadReader env m, MonadIO m, HasDisplayBasePath env Text)
