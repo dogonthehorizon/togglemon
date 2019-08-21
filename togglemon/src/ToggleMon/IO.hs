@@ -36,9 +36,9 @@ listDirectory
 listDirectory path = do
     env               <- ask
     directoryContents <- liftIO . try $ (env ^. listDirFn) (T.unpack path)
-    return
-      $ either (\(SomeException _) -> Nothing) Just
-      $ (fmap . fmap) T.pack directoryContents
+    return $ either (\(SomeException _) -> Nothing) Just $ (fmap . fmap)
+        T.pack
+        directoryContents
 
 -- | Filter a list of directory contents depending on whether the contents
 -- themselves are directories.

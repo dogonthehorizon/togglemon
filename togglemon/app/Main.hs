@@ -16,10 +16,8 @@ run = do
     env     <- ask
     rawDirs <- listDirectory $ env ^. displayBasePath
     dirs    <- case rawDirs of
-        Nothing ->
-            fail
-                $  "Could not list directory contents for "
-                ++ T.unpack ( env ^. displayBasePath)
+        Nothing -> fail $ "Could not list directory contents for " ++ T.unpack
+            (env ^. displayBasePath)
         Just r -> filterDirectory r
     displays <- catMaybes <$> mapM toDisplay dirs
     mapM_ (exec . buildXrandrCommand)
@@ -32,7 +30,7 @@ main :: IO ()
 main = do
     let
         env = Env
-            { envDisplayBasePath = "/sys/class/drm/"
+            { envDisplayBasePath = defaultDisplayBasePath
             , envListDirFn       = Dir.listDirectory
             , envReadFileFn      = TIO.readFile
             , envExecFn          = Proc.readProcess
