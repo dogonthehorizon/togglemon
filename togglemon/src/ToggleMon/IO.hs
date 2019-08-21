@@ -50,29 +50,36 @@ listDirectory path = do
 --            displayBasePath; consider shifting this concern to the call site instead.
 filterDirectory
     :: (MonadReader env m, MonadIO m, HasDisplayBasePath env Text)
-    => [Text]  -- ^ Directory contents to filter
+    => [Text]   -- ^ Directory contents to filter
     -> m [Text] -- ^ Directory contents, with all non-directories excluded.
 filterDirectory dirs = do
     env <- ask
     let qualifiedPath p = T.unpack (env ^. displayBasePath) <> T.unpack p
     liftIO $ filterM (Dir.doesDirectoryExist . qualifiedPath) dirs
 
+-- | Read the given file and return it's contents.
+--
+-- __ TODO __ must handle IOException
 readFile
     :: (MonadReader env m, MonadIO m, HasReadFileFn env ReadFileAction)
-    => Text
-    -> m Text
+    => Text   -- ^ The file to read
+    -> m Text -- ^ The file's contents
 readFile path = do
     env      <- ask
     contents <- liftIO $ (env ^. readFileFn) (T.unpack path)
     return . T.strip $ contents
 
+-- | Execute the given command and return it's result.
+--
+-- __ TODO __ must handle IOException
+--
+-- __ TODO __ must handle incomplete pattern match
 exec
     :: (MonadReader env m, MonadIO m, HasExecFn env ExecuteAction)
-    => Text
-    -> m Text
+    => Text -- ^ The full command to run (along with it's arguments)
+    -> m Text -- ^ The output from executing this command
 exec command = do
     env <- ask
-    -- TODO this is an incomplete match :(
     let (cmd : args) = T.splitOn " " command
     results <- liftIO $ (env ^. execFn) (T.unpack cmd) (T.unpack <$> args) []
     return . T.pack $ results
