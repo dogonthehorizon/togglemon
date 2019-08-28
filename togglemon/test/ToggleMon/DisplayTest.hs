@@ -13,7 +13,17 @@ import           TestUtils
 import qualified ToggleMon.Display                        as Display
 import           ToggleMon.Test.Smallcheck.Series.Display ()
 
-test_toStatus = testGroup
+test_module = testGroup "ToggleMon.Display" [
+    toStatus,
+    toEnabled,
+    toDisplay,
+    getActiveDisplay,
+    getDisabledDisplay,
+    toXrandrDisplayName,
+    buildXrandrCommand
+  ]
+
+toStatus = testGroup
     "toStatus"
     [ testCase "serialize connected"
     $   Display.toStatus "connected"
@@ -26,7 +36,7 @@ test_toStatus = testGroup
     @?= Nothing
     ]
 
-test_toEnabled = testGroup
+toEnabled = testGroup
     "toEnabled"
     [ testCase "serialize enabled"
     $   Display.toEnabled "enabled"
@@ -39,7 +49,7 @@ test_toEnabled = testGroup
     @?= Nothing
     ]
 
-test_toDisplay = testGroup
+toDisplay = testGroup
     "toDisplay"
     [ testCase "should properly serialize a known monitor" $ do
         let
@@ -57,7 +67,7 @@ test_toDisplay = testGroup
         result @?= Nothing
     ]
 
-test_getActiveDisplay = testGroup
+getActiveDisplay = testGroup
     "getActiveDisplay"
     [ testProperty "should get the first active display if connected/enabled"
           $ \(displays :: [Display.Display]) ->
@@ -72,7 +82,7 @@ test_getActiveDisplay = testGroup
                 in Display.getActiveDisplay displays == safeHead enabledDisplays
     ]
 
-test_getDisabledDisplay = testGroup
+getDisabledDisplay = testGroup
     "getDisabledDisplay"
     [ testProperty "should get the first passive display if disabled/connected"
           $ \(displays :: [Display.Display]) ->
@@ -89,7 +99,7 @@ test_getDisabledDisplay = testGroup
                         == safeHead disabledDisplays
     ]
 
-test_toXrandrDisplayName = testGroup
+toXrandrDisplayName = testGroup
     "toXrandrDisplayName"
     [
     -- Text expands quickly in smallcheck, consuming lots of resources for
@@ -102,7 +112,7 @@ test_toXrandrDisplayName = testGroup
             in Display.toXrandrDisplayName displayName == (port <> portNumber)
     ]
 
-test_buildXrandrCommand = testGroup
+buildXrandrCommand = testGroup
     "buildXrandrCommand"
     [ localOption (SmallCheckDepth 3)
       $ testProperty "should construct a valid xrandr command"
