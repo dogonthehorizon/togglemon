@@ -13,15 +13,16 @@ import           TestUtils
 import qualified ToggleMon.Display                        as Display
 import           ToggleMon.Test.Smallcheck.Series.Display ()
 
-test_module = testGroup "ToggleMon.Display" [
-    toStatus,
-    toEnabled,
-    toDisplay,
-    getActiveDisplay,
-    getDisabledDisplay,
-    toXrandrDisplayName,
-    buildXrandrCommand
-  ]
+test_module = testGroup
+    "ToggleMon.Display"
+    [ toStatus
+    , toEnabled
+    , toDisplay
+    , getActiveDisplay
+    , getDisabledDisplay
+    , toXrandrDisplayName
+    , buildXrandrCommand
+    ]
 
 toStatus = testGroup
     "toStatus"
