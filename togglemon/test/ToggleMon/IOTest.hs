@@ -23,7 +23,7 @@ test_module = testGroup
     [ ToggleMon.IOTest.listDirectory
     , filterDirectory
     , ToggleMon.IOTest.readFile
-    , exec
+    , ToggleMon.IOTest.exec
     ]
 
 listDirectory = testGroup
@@ -56,7 +56,15 @@ readFile = testGroup
 
 exec = testGroup
     "exec"
-    [ testCase "should execute the given  command" $ assertFailure "TODO"
-    , testCase "should handle missing command arguments" $ assertFailure "TODO"
-    , testCase "should handle IO exceptions" $ assertFailure "TODO"
+    [ testCase "should execute the given command" $ do
+        let input    = ["foo", "--bar", "baz"]
+        let expected = T.intercalate "_" input
+        result <- runTestMonad $ ToggleIO.exec (T.intercalate " " input)
+        result @?= Just expected
+    , testCase "should handle missing command arguments" $ do
+        result <- runTestMonad $ ToggleIO.exec ""
+        result @?= Just ""
+    , testCase "should handle IO exceptions" $ do
+        result <- runTestMonad $ ToggleIO.exec "fail"
+        result @?= Nothing
     ]

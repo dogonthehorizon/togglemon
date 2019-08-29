@@ -71,15 +71,16 @@ readFile path = do
 
 -- | Execute the given command and return it's result.
 --
--- __ TODO __ must handle IOException
---
--- __ TODO __ must handle incomplete pattern match
+-- __ TODO __ should report IO failure
 exec
     :: (MonadReader env m, MonadIO m, HasExecFn env ExecuteAction)
-    => Text -- ^ The full command to run (along with it's arguments)
-    -> m Text -- ^ The output from executing this command
+    => Text   -- ^ The full command to run (along with it's arguments)
+    -> m (Maybe Text) -- ^ The output from executing this command
 exec command = do
     env <- ask
     let (cmd : args) = T.splitOn " " command
-    results <- liftIO $ (env ^. execFn) (T.unpack cmd) (T.unpack <$> args) []
-    return . T.pack $ results
+    results <- liftIO . try $ (env ^. execFn)
+        (T.unpack cmd)
+        (T.unpack <$> args)
+        []
+    return . either (\(SomeException _) -> Nothing) Just $ T.pack <$> results

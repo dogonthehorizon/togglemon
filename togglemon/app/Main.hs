@@ -11,6 +11,7 @@ import           ToggleMon.Display
 import           ToggleMon.IO
 import           ToggleMon.Monad
 
+-- TODO centralize error handling, probably with an Either or some such
 run :: ToggleMon ()
 run = do
     env     <- ask
@@ -19,11 +20,16 @@ run = do
         Nothing -> fail $ "Could not list directory contents for " ++ T.unpack
             (env ^. displayBasePath)
         Just r -> filterDirectory r
-    displays <- catMaybes <$> mapM toDisplay dirs
-    mapM_ (exec . buildXrandrCommand)
+    displays      <- catMaybes <$> mapM toDisplay dirs
+    commandOutput <-
+        mapM (exec . buildXrandrCommand)
         $   ActivePassiveDisplayConfiguration
         <$> getActiveDisplay displays
         <*> getDisabledDisplay displays
+
+    case commandOutput of
+        Nothing -> fail "Failed to execute command"
+        Just _  -> return ()
 
 
 main :: IO ()

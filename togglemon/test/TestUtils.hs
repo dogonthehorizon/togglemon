@@ -1,15 +1,17 @@
 -- TODO module header explaining purpose. Could also use some general cleanup.
 module TestUtils where
 
+import           Control.Exception    (Exception, throw)
 import           Control.Monad.Reader (runReaderT)
 import           Data.HashMap.Strict  (HashMap)
 import qualified Data.HashMap.Strict  as Map
+import           Data.List            (intercalate)
 import           Data.Text            (Text)
 import qualified Data.Text            as T
 import           Prelude              hiding (readFile)
 import           System.FilePath      (FilePath)
 import           ToggleMon.Display    (Display (..), Enabled (..), Status (..))
-import           ToggleMon.Monad      (Env (..), ToggleMon (..))
+import           ToggleMon.Monad      (Env (..), ExecuteAction, ToggleMon (..))
 
 safeHead :: [a] -> Maybe a
 safeHead xs = if not (null xs) then Just $ head xs else Nothing
@@ -49,12 +51,20 @@ readFile fp =
             displayName
             displays
 
+data ExecException = ExecException deriving Show
+instance Exception ExecException
+
+exec :: ExecuteAction
+exec "fail" _    _ = throw ExecException
+exec cmd    args _ = return $ intercalate "_" (cmd : args)
+
+
 mockEnv :: Env
 mockEnv = Env
     { envDisplayBasePath = "root/"
     , envListDirFn       = listDirectory
     , envReadFileFn      = readFile
-    , envExecFn          = \_ _ _ -> return "" -- TODO
+    , envExecFn          = exec
     }
 
 runTestMonad :: ToggleMon a -> IO a
