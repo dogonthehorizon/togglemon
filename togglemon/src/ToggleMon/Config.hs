@@ -1,12 +1,13 @@
 module ToggleMon.Config where
 
-import           Data.Edid.Types (Edid, EdidVersion, Manufacturer)
-import qualified Data.Edid.Types as Edid
-import           Data.Text       (Text)
-import           Data.Yaml       (FromJSON, ToJSON, encodeFile)
-import           GHC.Generics    (Generic)
-import System.Environment.XDG.BaseDir (getUserDataDir)
-import System.FilePath ((</>))
+import           Data.Edid.Types                (Edid, EdidVersion,
+                                                 Manufacturer)
+import qualified Data.Edid.Types                as Edid
+import           Data.Text                      (Text)
+import           Data.Yaml                      (FromJSON, ToJSON, encodeFile)
+import           GHC.Generics                   (Generic)
+import           System.Environment.XDG.BaseDir (getUserDataDir)
+import           System.FilePath                ((</>))
 
 type Name = Text
 
@@ -41,5 +42,5 @@ data ToggleMonConfig = ToggleMonConfig {
 
 writeConfig :: InternalConfig -> IO ()
 writeConfig config = do
-  dataDir <- getUserDataDir "togglemon"
-  encodeFile (dataDir </> "known-displays.yaml") config
+    dataDir <- getUserDataDir "togglemon"
+    encodeFile (dataDir </> "known-displays.yaml") config
