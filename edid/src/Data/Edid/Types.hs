@@ -18,10 +18,11 @@ import           Data.ByteString    (ByteString)
 import           Data.Text          (Text)
 import qualified Data.Text.Encoding as TE
 import           Data.Word          (Word8)
+import           GHC.Generics       (Generic)
 
 -- | Version of the EDID spec.
 data EdidVersion = V1_0 | V1_1 | V1_2 | V1_3 | V1_4 | V2_0
-  deriving (Show, Eq)
+  deriving (Generic, Show, Eq)
 
 -- | Constructs an EDID version.
 mkEdidVersion :: Word8 -> Word8 -> Maybe EdidVersion
@@ -34,19 +35,25 @@ mkEdidVersion 0x2 0x0 = Just V2_0
 mkEdidVersion _   _   = Nothing
 
 -- | Manufacturer information provided by an EDID blob.
-data Manufacturer = Manufacturer Text Integer deriving (Show, Eq)
+data Manufacturer = Manufacturer Text Integer deriving (Generic, Show, Eq)
 
 -- | Constructs a Manufacturer value.
 mkManufacturuer :: ByteString -> Integer -> Manufacturer
 mkManufacturuer b = Manufacturer (TE.decodeUtf8 b)
 
+-- | Constructs a year of manufacture value.
 mkYearOfManufacture :: Word8 -> Integer
 mkYearOfManufacture = (+ 1990) . fromIntegral
 
+-- | Representation of a display EDID.
 data Edid = Edid {
   manufacturer      :: Manufacturer,
   serialNumber      :: Integer, -- TODO for now
   weekOfManufacture :: Integer, -- TODO for now
   yearOfManufacture :: Integer,
   version           :: EdidVersion
-} deriving (Show, Eq)
+} deriving (Generic, Show, Eq)
+
+-- | An empty EDID object.
+empty :: Edid
+empty = Edid (Manufacturer "default" 0) 0 0 0 V1_4
