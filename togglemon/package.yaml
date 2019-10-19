@@ -56,6 +56,10 @@ dependencies:
 
 library:
   source-dirs: src
+  dependencies:
+    - edid
+    - yaml
+    - xdg-basedir
   
 executables:
   togglemon:
