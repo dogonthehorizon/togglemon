@@ -17,7 +17,7 @@
 #
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
-resolver: lts-13.26
+resolver: lts-14.14
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -39,8 +39,7 @@ packages:
 # Dependency packages to be pulled from upstream that are not in the resolver
 # using the same syntax as the packages field.
 # (e.g., acme-missiles-0.3)
-extra-deps:
-  - smallcheck-series-0.6.1@sha256:8f3ece2719dae917152b70523639a343c71f4261b68c115163626025bab284a4
+# extra-deps: []
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
@@ -64,5 +63,5 @@ extra-deps:
 # extra-lib-dirs: [/path/to/dir]
 #
 # Allow a newer minor version of GHC than the snapshot specifies
-# compiler-check: newer-minor
+compiler-check: newer-minor
 dump-logs: all
