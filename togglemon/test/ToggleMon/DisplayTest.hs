@@ -122,7 +122,7 @@ buildXrandrCommand = testGroup
                 displayName p = T.intercalate "-" [card, p, portNum]
                 display             = displayName port
                 display'            = displayName port'
-                activePassiveConfig = Display.ActivePassiveDisplayConfiguration
+                activePassiveConfig = Display.ActivePassive
                     (Display.Display display Display.Enabled Display.Connected)
                     (Display.Display display' Display.Disabled Display.Connected
                     )

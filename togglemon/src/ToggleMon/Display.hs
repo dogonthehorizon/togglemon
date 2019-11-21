@@ -34,10 +34,11 @@ data Display = Display DisplayName Enabled Status deriving (Show, Eq)
 -- display represents the currently active display while the second represents
 -- a passive display that is connected. When triggered, the passive display
 -- will be configured and swapped with the active display.
-data ActivePassiveDisplayConfiguration =
-  ActivePassiveDisplayConfiguration
+data DisplayConfiguration =
+  ActivePassive
     Display -- ^ The currently active display.
     Display -- ^ The connected, passive display.
+  | Single Display [Display]
     deriving (Show, Eq)
 
 -- | Construct a 'Status'.
@@ -101,11 +102,33 @@ getDisabledDisplay = find disabledDisplay
 toXrandrDisplayName :: Text -> Text
 toXrandrDisplayName = T.concat . drop 1 . T.splitOn "-"
 
+disableDisplay :: Display -> [Text]
+disableDisplay (Display name _ _) =
+    ["--output", toXrandrDisplayName name, "--off"]
+
+enableDisplay :: Display -> [Text]
+enableDisplay (Display name _ _) =
+    [ "--output"
+    , toXrandrDisplayName name
+    , "--pos"
+    , "0x0"
+    , "--auto"
+    , "--scale"
+    , "2x2"
+    ]
+
+render :: [Text] -> Text
+render = T.intercalate " "
+
 -- TODO support setting scaling options per display
-buildXrandrCommand :: ActivePassiveDisplayConfiguration -> Text
-buildXrandrCommand (ActivePassiveDisplayConfiguration (Display activeName _ _) (Display disabledName _ _))
-    = "xrandr --output "
-        <> toXrandrDisplayName activeName
-        <> " --off --output "
-        <> toXrandrDisplayName disabledName
-        <> " --pos 0x0 --auto --scale 2x2"
+buildXrandrCommand :: DisplayConfiguration -> Text
+buildXrandrCommand (ActivePassive activeDisplay disabledDisplay) =
+    T.strip $ "xrandr " <> render (disableDisplay activeDisplay) <> render
+        (enableDisplay disabledDisplay)
+
+buildXrandrCommand (Single activeDisplay displays) =
+    T.strip
+        $  "xrandr "
+        <> render (render . disableDisplay <$> displays)
+        <> " "
+        <> render (enableDisplay activeDisplay)

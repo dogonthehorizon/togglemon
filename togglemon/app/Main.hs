@@ -11,35 +11,46 @@ import           ToggleMon.Display
 import           ToggleMon.IO
 import           ToggleMon.Monad
 
--- TODO centralize error handling, probably with an Either or some such
-run :: ToggleMon ()
-run = do
+getDisplayConfiguration :: ToggleMon (Maybe DisplayConfiguration)
+getDisplayConfiguration = do
     env     <- ask
     rawDirs <- listDirectory $ env ^. displayBasePath
     dirs    <- case rawDirs of
         Nothing -> fail $ "Could not list directory contents for " ++ T.unpack
             (env ^. displayBasePath)
         Just r -> filterDirectory r
-    displays      <- catMaybes <$> mapM toDisplay dirs
-    commandOutput <-
-        mapM (exec . buildXrandrCommand)
-        $   ActivePassiveDisplayConfiguration
-        <$> getActiveDisplay displays
-        <*> getDisabledDisplay displays
+    displays <- catMaybes <$> mapM toDisplay dirs
+
+    return
+        $   getActiveDisplay displays
+        >>= \activeDisplay -> return $ case getDisabledDisplay displays of
+                Nothing ->
+                    Single activeDisplay (filter (/= activeDisplay) displays)
+                Just disabledDisplay ->
+                    ActivePassive activeDisplay disabledDisplay
+
+builtCommand :: ToggleMon (Maybe T.Text)
+builtCommand = do
+    displayConfig <- getDisplayConfiguration
+    return $ buildXrandrCommand <$> displayConfig
+
+-- TODO centralize error handling, probably with an Either or some such
+run :: ToggleMon ()
+run = do
+    displayConfig <- getDisplayConfiguration
+    commandOutput <- mapM (exec . buildXrandrCommand) displayConfig
 
     case commandOutput of
         Nothing -> fail "Failed to execute command"
         Just _  -> return ()
 
+environment :: Env
+environment = Env
+    { envDisplayBasePath = defaultDisplayBasePath
+    , envListDirFn       = Dir.listDirectory
+    , envReadFileFn      = TIO.readFile
+    , envExecFn          = Proc.readProcess
+    }
 
 main :: IO ()
-main = do
-    let
-        env = Env
-            { envDisplayBasePath = defaultDisplayBasePath
-            , envListDirFn       = Dir.listDirectory
-            , envReadFileFn      = TIO.readFile
-            , envExecFn          = Proc.readProcess
-            }
-
-    runReaderT (runToggleMon run) env
+main = runReaderT (runToggleMon run) environment

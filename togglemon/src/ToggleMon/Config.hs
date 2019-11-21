@@ -43,4 +43,5 @@ data ToggleMonConfig = ToggleMonConfig {
 writeConfig :: InternalConfig -> IO ()
 writeConfig config = do
     dataDir <- getUserDataDir "togglemon"
+    -- TODO support when xdg-data-dir doesn't exist
     encodeFile (dataDir </> "known-displays.yaml") config
