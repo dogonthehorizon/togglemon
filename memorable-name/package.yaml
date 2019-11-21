@@ -43,12 +43,13 @@ default-extensions:
   - ScopedTypeVariables
   - TemplateHaskell
 
+dependencies:
+  - base >= 4.7 && < 5
+  - random
+  - mtl
+
 library:
   source-dirs: src
-  dependencies:
-    - base >= 4.7 && < 5
-    - random
-    - mtl
   
 tests:
   memorable-name-test:
@@ -60,7 +61,7 @@ tests:
       - -with-rtsopts=-N
       - -Wno-missing-signatures
     dependencies:
-      - togglemon
+      - memorable-name
       - smallcheck
       - smallcheck-series
       - tasty
