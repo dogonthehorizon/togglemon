@@ -2,6 +2,7 @@ module Main where
 
 import           Control.Lens         ((^.))
 import           Control.Monad.Reader (ask, runReaderT)
+import qualified Data.ByteString      as BS
 import           Data.Maybe           (catMaybes)
 import qualified Data.Text            as T
 import qualified Data.Text.IO         as TIO
@@ -41,10 +42,11 @@ run = do
 
 environment :: Env
 environment = Env
-    { envDisplayBasePath = defaultDisplayBasePath
-    , envListDirFn       = Dir.listDirectory
-    , envReadFileFn      = TIO.readFile
-    , envExecFn          = Proc.readProcess
+    { envDisplayBasePath  = defaultDisplayBasePath
+    , envListDirFn        = Dir.listDirectory
+    , envReadFileFn       = TIO.readFile
+    , envExecFn           = Proc.readProcess
+    , envReadByteStringFn = BS.readFile
     }
 
 main :: IO ()

@@ -18,6 +18,7 @@ import           Control.Lens           ((^.))
 import           Control.Monad          (filterM)
 import           Control.Monad.IO.Class (MonadIO, liftIO)
 import           Control.Monad.Reader   (MonadReader, ask)
+import           Data.ByteString        (ByteString)
 import           Data.Text              (Text)
 import qualified Data.Text              as T
 import qualified System.Directory       as Dir
@@ -68,6 +69,17 @@ readFile path = do
     env      <- ask
     contents <- liftIO $ (env ^. readFileFn) (T.unpack path)
     return . T.strip $ contents
+
+readByteString
+    :: ( MonadReader env m
+       , MonadIO m
+       , HasReadByteStringFn env ReadByteStringAction
+       )
+    => Text -- ^ The file to read
+    -> m ByteString -- ^ The file's contents as a ByteString
+readByteString path = do
+    env <- ask
+    liftIO $ (env ^. readByteStringFn) (T.unpack path)
 
 -- | Execute the given command and return it's result.
 --

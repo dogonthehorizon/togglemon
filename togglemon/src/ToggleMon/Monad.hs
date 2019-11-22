@@ -13,11 +13,14 @@ module ToggleMon.Monad where
 import Control.Lens           (camelCaseFields, makeLensesWith)
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Reader   (MonadReader, ReaderT)
+import Data.ByteString        (ByteString)
 import Data.Text              (Text)
 import System.FilePath        (FilePath)
 
 -- | Action representing reading a file within the IO monad.
 type ReadFileAction      = FilePath -> IO Text
+-- | Action representing reading a file as a ByteString.
+type ReadByteStringAction = FilePath -> IO ByteString
 -- | Action representing listing the contents of a directory within the IO
 -- monad.
 type ListDirectoryAction = FilePath -> IO [FilePath]
@@ -28,11 +31,12 @@ type ExecuteAction       = FilePath -> [String] -> String -> IO String
 -- | The environment for 'ToggleMon' containing side-effecting functions and
 -- configuration.
 data Env = Env {
-  envDisplayBasePath :: Text,
+  envDisplayBasePath  :: Text,
   -- ^ The location in a filesystem where Linux DRM information is exposed.
-  envListDirFn       :: !ListDirectoryAction,
-  envReadFileFn      :: !ReadFileAction,
-  envExecFn          :: !ExecuteAction
+  envListDirFn        :: !ListDirectoryAction,
+  envReadFileFn       :: !ReadFileAction,
+  envExecFn           :: !ExecuteAction,
+  envReadByteStringFn :: !ReadByteStringAction
 }
 
 -- | Most common location where Linux DRM information will be exposed.

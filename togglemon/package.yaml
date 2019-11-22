@@ -57,6 +57,7 @@ dependencies:
 library:
   source-dirs: src
   dependencies:
+    - errors
     - edid
     - yaml
     - xdg-basedir

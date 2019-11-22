@@ -7,9 +7,12 @@ Stability : stable
 -}
 module ToggleMon.Display where
 
+import           Control.Error.Util     (hush)
 import           Control.Lens           ((^.))
 import           Control.Monad.IO.Class (MonadIO)
 import           Control.Monad.Reader   (MonadReader, ask)
+import qualified Data.Edid.Parser       as Edid
+import           Data.Edid.Types        (Edid (..))
 import           Data.List              (find)
 import           Data.Text              (Text)
 import qualified Data.Text              as T
@@ -26,7 +29,7 @@ data Enabled = Enabled | Disabled deriving (Show, Eq)
 type DisplayName = Text
 
 -- | Representation of a single DRM display.
-data Display = Display DisplayName Enabled Status deriving (Show, Eq)
+data Display = Display DisplayName Enabled Status Edid deriving (Show, Eq)
 
 -- | Configured display configurations.
 data DisplayConfiguration =
@@ -57,6 +60,7 @@ toDisplay
     :: ( MonadReader env m
        , MonadIO m
        , HasReadFileFn env ReadFileAction
+       , HasReadByteStringFn env ReadByteStringAction
        , HasListDirFn env ListDirectoryAction
        , HasDisplayBasePath env Text
        )
@@ -78,26 +82,30 @@ toDisplay dName = do
                         $ T.concat [displayPath, "/", "status"]
                     enabled <- ToggleIO.readFile
                         $ T.concat [displayPath, "/", "enabled"]
+                    edidFile <- ToggleIO.readByteString
+                        $ T.concat [displayPath, "/", "edid"]
 
                     return
                         $   Display dName
                         <$> toEnabled enabled
                         <*> toStatus status
+                        -- TODO properly handle the Either value
+                        <*> hush (Edid.parseContent edidFile)
                 else return Nothing
 
 -- | Get the first display that is in a enabled _and_ connected state.
 getActiveDisplay :: [Display] -> Maybe Display
 getActiveDisplay = find activeDisplay
   where
-    activeDisplay (Display _ Enabled Connected) = True
-    activeDisplay _                             = False
+    activeDisplay (Display _ Enabled Connected _) = True
+    activeDisplay _                               = False
 
 -- | Get the first display that is in a disabled but connected state.
 getDisabledDisplay :: [Display] -> Maybe Display
 getDisabledDisplay = find disabledDisplay
   where
-    disabledDisplay (Display _ Disabled Connected) = True
-    disabledDisplay _                              = False
+    disabledDisplay (Display _ Disabled Connected _) = True
+    disabledDisplay _ = False
 
 -- | Construct an `xrandr` compatible display name.
 toXrandrDisplayName :: Text -> Text
@@ -105,12 +113,12 @@ toXrandrDisplayName = T.concat . drop 1 . T.splitOn "-"
 
 -- | Construct an `xrandr` command segment to disable the given display.
 disableDisplay :: Display -> [Text]
-disableDisplay (Display name _ _) =
+disableDisplay (Display name _ _ _) =
     ["--output", toXrandrDisplayName name, "--off"]
 
 -- | Construct an `xrandr` command segment to enable the given display.
 enableDisplay :: Display -> [Text]
-enableDisplay (Display name _ _) =
+enableDisplay (Display name _ _ _) =
     [ "--output"
     , toXrandrDisplayName name
     , "--pos"
