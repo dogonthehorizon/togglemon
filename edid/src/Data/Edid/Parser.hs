@@ -18,14 +18,13 @@ to test whether that is the case or not.
 TODO provide typical usage instructions once the API is a bit more stable.
 -}
 module Data.Edid.Parser (
-  parseEdid,
   fixedPreamble,
-  parseManufacturerId,
-  parseManufacturerCode,
-  parseSerialId,
   manufacturerId,
-  -- TODO remove or refactor
-  testies
+  parseContent,
+  parseFile,
+  parseManufacturerCode,
+  parseManufacturerId,
+  parseSerialId
 ) where
 
 import           Control.Monad              (liftM2)
@@ -109,10 +108,18 @@ parseEdid = do
         <*> (mkYearOfManufacture <$> getWord8)
         <*> parseVersion
 
--- | Test the thing in a REPL
-testies :: FilePath -> IO ()
-testies fp = do
-    file <- BS.readFile fp
-    case runGet parseEdid file of
-        Right v -> print v
-        Left  e -> putStrLn $ "Got an error:\n\t" ++ show e
+-- | Attempt to parse EDID from provided content.
+--
+-- https://en.wikipedia.org/wiki/Extended_Display_Identification_Data#Structure,_version_1.4
+-- https://www.extron.com/article/uedid
+parseContent :: ByteString -> Either String Edid
+parseContent = runGet parseEdid
+
+-- | Attempt to parse EDID from provided file path.
+--
+-- https://en.wikipedia.org/wiki/Extended_Display_Identification_Data#Structure,_version_1.4
+-- https://www.extron.com/article/uedid
+parseFile :: FilePath -> IO (Either String Edid)
+parseFile path = do
+    file <- BS.readFile path
+    return $ parseContent file
