@@ -28,17 +28,14 @@ type DisplayName = Text
 -- | Representation of a single DRM display.
 data Display = Display DisplayName Enabled Status deriving (Show, Eq)
 
--- | Represenation of an active/passive display setup.
---
--- This is the originaly configuration strategy for togglemon. The first
--- display represents the currently active display while the second represents
--- a passive display that is connected. When triggered, the passive display
--- will be configured and swapped with the active display.
+-- | Configured display configurations.
 data DisplayConfiguration =
-  ActivePassive
+  ActivePassive -- ^ Display configuration for toggling between active and passive displays.
     Display -- ^ The currently active display.
     Display -- ^ The connected, passive display.
-  | Single Display [Display]
+  | Single -- ^ Display configuration when only one display is active.
+      Display -- ^ The only active display.
+      [Display] -- ^ All other potential displays for the machine.
     deriving (Show, Eq)
 
 -- | Construct a 'Status'.
@@ -55,6 +52,7 @@ toEnabled s = case s of
     "disabled" -> Just Disabled
     _          -> Nothing
 
+-- | Construct a 'Display' given the information in /sys/class/drm.
 toDisplay
     :: ( MonadReader env m
        , MonadIO m
@@ -87,25 +85,30 @@ toDisplay dName = do
                         <*> toStatus status
                 else return Nothing
 
+-- | Get the first display that is in a enabled _and_ connected state.
 getActiveDisplay :: [Display] -> Maybe Display
 getActiveDisplay = find activeDisplay
   where
     activeDisplay (Display _ Enabled Connected) = True
     activeDisplay _                             = False
 
+-- | Get the first display that is in a disabled but connected state.
 getDisabledDisplay :: [Display] -> Maybe Display
 getDisabledDisplay = find disabledDisplay
   where
     disabledDisplay (Display _ Disabled Connected) = True
     disabledDisplay _                              = False
 
+-- | Construct an `xrandr` compatible display name.
 toXrandrDisplayName :: Text -> Text
 toXrandrDisplayName = T.concat . drop 1 . T.splitOn "-"
 
+-- | Construct an `xrandr` command segment to disable the given display.
 disableDisplay :: Display -> [Text]
 disableDisplay (Display name _ _) =
     ["--output", toXrandrDisplayName name, "--off"]
 
+-- | Construct an `xrandr` command segment to enable the given display.
 enableDisplay :: Display -> [Text]
 enableDisplay (Display name _ _) =
     [ "--output"
@@ -117,15 +120,16 @@ enableDisplay (Display name _ _) =
     , "2x2"
     ]
 
+-- | Render a command segment into a single string.
 render :: [Text] -> Text
 render = T.intercalate " "
 
+-- | Build a correct `xrandr` command to be executed somewhere.
 -- TODO support setting scaling options per display
 buildXrandrCommand :: DisplayConfiguration -> Text
 buildXrandrCommand (ActivePassive activeDisplay disabledDisplay) =
     T.strip $ "xrandr " <> render (disableDisplay activeDisplay) <> render
         (enableDisplay disabledDisplay)
-
 buildXrandrCommand (Single activeDisplay displays) =
     T.strip
         $  "xrandr "

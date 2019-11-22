@@ -29,11 +29,6 @@ getDisplayConfiguration = do
                 Just disabledDisplay ->
                     ActivePassive activeDisplay disabledDisplay
 
-builtCommand :: ToggleMon (Maybe T.Text)
-builtCommand = do
-    displayConfig <- getDisplayConfiguration
-    return $ buildXrandrCommand <$> displayConfig
-
 -- TODO centralize error handling, probably with an Either or some such
 run :: ToggleMon ()
 run = do
