@@ -58,6 +58,8 @@ library:
   source-dirs: src
   dependencies:
     - errors
+    - memorable-name
+    - retry
     - edid
     - yaml
     - xdg-basedir

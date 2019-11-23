@@ -1,13 +1,22 @@
 module ToggleMon.Config where
 
+import           Control.Arrow                  (left)
+import           Control.Monad.Trans            (MonadIO)
+import           Control.Retry                  (limitRetries, retrying)
 import           Data.Edid.Types                (Edid, EdidVersion,
                                                  Manufacturer)
 import qualified Data.Edid.Types                as Edid
+import           Data.List                      (find)
+import           Data.Maybe                     (isNothing)
 import           Data.Text                      (Text)
-import           Data.Yaml                      (FromJSON, ToJSON, encodeFile)
+import qualified Data.Text                      as T
+import           Data.Yaml                      (FromJSON, ToJSON,
+                                                 decodeFileEither, encodeFile)
 import           GHC.Generics                   (Generic)
+import           MemorableName                  (MemorableName, memorableName)
 import           System.Environment.XDG.BaseDir (getUserDataDir)
 import           System.FilePath                ((</>))
+import           ToggleMon.Display              (Display (..))
 
 type Name = Text
 
@@ -40,8 +49,43 @@ data ToggleMonConfig = ToggleMonConfig {
     displayConfig :: [HardwareDisplay]
   }
 
+findInConfig :: InternalConfig -> Display -> Maybe HardwareDisplay
+findInConfig cfg (Display _ _ _ displayEdid) = find
+    (\(HardwareDisplay _ configEdid) -> displayEdid == configEdid)
+    (knownDisplays cfg)
+
 writeConfig :: InternalConfig -> IO ()
 writeConfig config = do
     dataDir <- getUserDataDir "togglemon"
     -- TODO support when xdg-data-dir doesn't exist
     encodeFile (dataDir </> "known-displays.yaml") config
+
+-- TODO better handle Either type
+readConfig :: IO (Either String InternalConfig)
+readConfig = do
+    dataDir <- getUserDataDir "togglemon"
+    content <- decodeFileEither (dataDir </> "known-displays.yaml")
+    return $ left show content
+
+generateName :: MonadIO m => InternalConfig -> m (Maybe MemorableName)
+generateName cfg =
+    retrying (limitRetries 100) (const $ return . isNothing) $ \_ -> do
+        memName <- memorableName
+        return $ if show memName `elem` (show . name <$> knownDisplays cfg)
+            then Nothing
+            else Just memName
+
+updateConfig :: InternalConfig -> Display -> IO (Maybe InternalConfig)
+updateConfig cfg display@(Display _ _ _ edid) =
+    case findInConfig cfg display of
+        Just _  -> return . Just $ cfg
+        Nothing -> do
+            generated <- generateName cfg
+            return $ generated >>= \name ->
+                let
+                    hardwareDisplay =
+                        HardwareDisplay (T.pack . show $ name) edid
+                in
+                    return InternalConfig
+                        { knownDisplays = hardwareDisplay : knownDisplays cfg
+                        }
