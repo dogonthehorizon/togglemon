@@ -1,7 +1,7 @@
 module ToggleMon.Config where
 
 import           Control.Arrow                  (left)
-import           Control.Monad.Trans            (MonadIO)
+import           Control.Monad.Trans            (MonadIO, liftIO)
 import           Control.Retry                  (limitRetries, retrying)
 import           Data.Edid.Types                (Edid, EdidVersion,
                                                  Manufacturer)
@@ -61,10 +61,10 @@ writeConfig config = do
     encodeFile (dataDir </> "known-displays.yaml") config
 
 -- TODO better handle Either type
-readConfig :: IO (Either String InternalConfig)
+readConfig :: MonadIO m => m (Either String InternalConfig)
 readConfig = do
-    dataDir <- getUserDataDir "togglemon"
-    content <- decodeFileEither (dataDir </> "known-displays.yaml")
+    dataDir <- liftIO $ getUserDataDir "togglemon"
+    content <- liftIO $ decodeFileEither (dataDir </> "known-displays.yaml")
     return $ left show content
 
 generateName :: MonadIO m => InternalConfig -> m (Maybe MemorableName)
@@ -75,6 +75,7 @@ generateName cfg =
             then Nothing
             else Just memName
 
+-- TODO this feels pretty ugly.
 updateConfig :: InternalConfig -> Display -> IO (Maybe InternalConfig)
 updateConfig cfg display@(Display _ _ _ edid) =
     case findInConfig cfg display of

@@ -8,37 +8,46 @@ import qualified Data.Text            as T
 import qualified Data.Text.IO         as TIO
 import qualified System.Directory     as Dir
 import qualified System.Process       as Proc
-import           ToggleMon.Display
-import           ToggleMon.IO
+import           ToggleMon.Config     (InternalConfig)
+import qualified ToggleMon.Config     as Config
+import           ToggleMon.Display    (Display, DisplayConfiguration (..))
+import qualified ToggleMon.Display    as Display
+import qualified ToggleMon.IO         as ToggleIO
 import           ToggleMon.Monad
 
-getDisplayConfiguration :: ToggleMon (Maybe DisplayConfiguration)
-getDisplayConfiguration = do
+getDisplays :: ToggleMon [Display]
+getDisplays = do
     env     <- ask
-    rawDirs <- listDirectory $ env ^. displayBasePath
+    rawDirs <- ToggleIO.listDirectory $ env ^. displayBasePath
     dirs    <- case rawDirs of
         Nothing -> fail $ "Could not list directory contents for " ++ T.unpack
             (env ^. displayBasePath)
-        Just r -> filterDirectory r
-    displays <- catMaybes <$> mapM toDisplay dirs
+        Just r -> ToggleIO.filterDirectory r
+    catMaybes <$> mapM Display.toDisplay dirs
 
+updateConfig :: [Display] -> ToggleMon (Maybe InternalConfig)
+updateConfig _ = do
+    currentConfig <- Config.readConfig
+    -- TODO real updateConfig functionality
+    -- 1. Get current config
+    -- 2. Update config with displays
+    -- 3. Write config
+    return $ case currentConfig of
+        Left  _ -> Nothing
+        Right v -> Just v
+
+-- TODO this doesn't need to live in the ToggleMon monad. Needs refactoring.
+getDisplayConfiguration :: [Display] -> ToggleMon (Maybe DisplayConfiguration)
+getDisplayConfiguration displays =
     return
-        $   getActiveDisplay displays
-        >>= \activeDisplay -> return $ case getDisabledDisplay displays of
-                Nothing ->
-                    Single activeDisplay (filter (/= activeDisplay) displays)
-                Just disabledDisplay ->
-                    ActivePassive activeDisplay disabledDisplay
-
--- TODO centralize error handling, probably with an Either or some such
-run :: ToggleMon ()
-run = do
-    displayConfig <- getDisplayConfiguration
-    commandOutput <- mapM (exec . buildXrandrCommand) displayConfig
-
-    case commandOutput of
-        Nothing -> fail "Failed to execute command"
-        Just _  -> return ()
+        $   Display.getActiveDisplay displays
+        >>= \activeDisplay ->
+                return $ case Display.getDisabledDisplay displays of
+                    Nothing -> Single
+                        activeDisplay
+                        (filter (/= activeDisplay) displays)
+                    Just disabledDisplay ->
+                        ActivePassive activeDisplay disabledDisplay
 
 environment :: Env
 environment = Env
@@ -50,4 +59,17 @@ environment = Env
     }
 
 main :: IO ()
-main = runReaderT (runToggleMon run) environment
+main =
+    flip runReaderT environment
+        $ runToggleMon
+        $ do
+              -- TODO centralize error handling, probably with an Either or some such
+              displays      <- getDisplays
+              displayConfig <- getDisplayConfiguration displays
+              commandOutput <- mapM
+                  (ToggleIO.exec . Display.buildXrandrCommand)
+                  displayConfig
+
+              case commandOutput of
+                  Nothing -> fail "Failed to execute command"
+                  Just _  -> return ()
