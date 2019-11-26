@@ -136,11 +136,11 @@ render = T.intercalate " "
 -- TODO support setting scaling options per display
 buildXrandrCommand :: DisplayConfiguration -> Text
 buildXrandrCommand (ActivePassive activeDisplay disabledDisplay) =
-    T.strip $ "xrandr " <> render (disableDisplay activeDisplay) <> render
+    T.strip $ render ("xrandr" : disableDisplay activeDisplay) <> render
         (enableDisplay disabledDisplay)
 buildXrandrCommand (Single activeDisplay displays) =
     T.strip
-        $  "xrandr "
+        $  "xrandr"
         <> render (render . disableDisplay <$> displays)
         <> " "
         <> render (enableDisplay activeDisplay)

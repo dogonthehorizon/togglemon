@@ -45,24 +45,24 @@ default-extensions:
 
 dependencies:
   - base >= 4.7 && < 5
+  - bytestring
   - directory
+  - errors
   - filepath
   - lens
   - mtl
   - process
   - text
-  - bytestring
 
 
 library:
   source-dirs: src
   dependencies:
-    - errors
+    - edid
     - memorable-name
     - retry
-    - edid
-    - yaml
     - xdg-basedir
+    - yaml
   
 executables:
   togglemon:

@@ -6,8 +6,9 @@ import           Control.Retry                  (limitRetries, retrying)
 import           Data.Edid.Types                (Edid, EdidVersion,
                                                  Manufacturer)
 import qualified Data.Edid.Types                as Edid
+import           Data.Foldable                  (foldlM)
 import           Data.List                      (find)
-import           Data.Maybe                     (isNothing)
+import           Data.Maybe                     (fromMaybe, isNothing)
 import           Data.Text                      (Text)
 import qualified Data.Text                      as T
 import           Data.Yaml                      (FromJSON, ToJSON,
@@ -41,6 +42,9 @@ instance FromJSON HardwareDisplay
 data InternalConfig = InternalConfig {
     knownDisplays :: [HardwareDisplay]
   } deriving (Show, Generic)
+
+defaultInternalConfig :: InternalConfig
+defaultInternalConfig = InternalConfig []
 
 instance ToJSON InternalConfig
 instance FromJSON InternalConfig
@@ -76,8 +80,9 @@ generateName cfg =
             else Just memName
 
 -- TODO this feels pretty ugly.
-updateConfig :: InternalConfig -> Display -> IO (Maybe InternalConfig)
-updateConfig cfg display@(Display _ _ _ edid) =
+updateConfig'
+    :: MonadIO m => InternalConfig -> Display -> m (Maybe InternalConfig)
+updateConfig' cfg display@(Display _ _ _ edid) =
     case findInConfig cfg display of
         Just _  -> return . Just $ cfg
         Nothing -> do
@@ -90,3 +95,12 @@ updateConfig cfg display@(Display _ _ _ edid) =
                     return InternalConfig
                         { knownDisplays = hardwareDisplay : knownDisplays cfg
                         }
+
+-- TODO refactor this, not happy with fromMaybe/Just shenanigans.
+updateConfig
+    :: MonadIO m => InternalConfig -> [Display] -> m (Maybe InternalConfig)
+updateConfig cfg = foldlM
+    (\currentConfig display ->
+        updateConfig' (fromMaybe cfg currentConfig) display
+    )
+    (Just cfg)
