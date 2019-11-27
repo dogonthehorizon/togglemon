@@ -34,19 +34,6 @@ updateConfig displays = do
     updatedConfig <- Config.updateConfig cfg displays
     liftIO . sequence $ Config.writeConfig <$> updatedConfig
 
--- TODO this doesn't need to live in the ToggleMon monad. Needs refactoring.
-getDisplayConfiguration :: [Display] -> ToggleMon (Maybe DisplayConfiguration)
-getDisplayConfiguration displays =
-    return
-        $   Display.getActiveDisplay displays
-        >>= \activeDisplay ->
-                return $ case Display.getDisabledDisplay displays of
-                    Nothing -> Single
-                        activeDisplay
-                        (filter (/= activeDisplay) displays)
-                    Just disabledDisplay ->
-                        ActivePassive activeDisplay disabledDisplay
-
 environment :: Env
 environment = Env
     { envDisplayBasePath  = defaultDisplayBasePath
@@ -56,24 +43,18 @@ environment = Env
     , envReadByteStringFn = BS.readFile
     }
 
-printCmd :: ToggleMon ()
-printCmd = do
-    displays <- getDisplays
-    cfg      <- getDisplayConfiguration displays
-    liftIO $ print $ Display.buildXrandrCommand <$> cfg
-    return ()
-
 main :: IO ()
 main =
     flip runReaderT environment
         $ runToggleMon
         $ do
               -- TODO centralize error handling, probably with an Either or some such
-              displays      <- getDisplays
-              _             <- updateConfig displays
-              displayConfig <- getDisplayConfiguration displays
+              displays <- getDisplays
+              _        <- updateConfig displays
 
-              let cmd = Display.buildXrandrCommand <$> displayConfig
+              let
+                  cmd = Display.buildXrandrCommand
+                      <$> Display.getDisplayConfiguration displays
 
               commandOutput <- mapM ToggleIO.exec cmd
 

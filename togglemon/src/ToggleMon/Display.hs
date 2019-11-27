@@ -107,6 +107,13 @@ getDisabledDisplay = find disabledDisplay
     disabledDisplay (Display _ Disabled Connected _) = True
     disabledDisplay _ = False
 
+getDisplayConfiguration :: [Display] -> Maybe DisplayConfiguration
+getDisplayConfiguration displays = do
+    activeDisplay <- getActiveDisplay displays
+    return $ case getDisabledDisplay displays of
+        Nothing -> Single activeDisplay (filter (/= activeDisplay) displays)
+        Just disabledDisplay -> ActivePassive activeDisplay disabledDisplay
+
 -- | Construct an `xrandr` compatible display name.
 toXrandrDisplayName :: Text -> Text
 toXrandrDisplayName = T.concat . drop 1 . T.splitOn "-"
