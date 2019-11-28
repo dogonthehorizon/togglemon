@@ -16,20 +16,21 @@ import           Data.Edid.Types        (Edid (..))
 import           Data.List              (find)
 import           Data.Text              (Text)
 import qualified Data.Text              as T
+import           GHC.Generics           (Generic)
 import qualified ToggleMon.IO           as ToggleIO
 import           ToggleMon.Monad
 
 -- | The connection status of a display.
-data Status = Connected | Disconnected deriving (Show, Eq)
+data Status = Connected | Disconnected deriving (Generic, Show, Eq)
 
 -- | The usage status of a display.
-data Enabled = Enabled | Disabled deriving (Show, Eq)
+data Enabled = Enabled | Disabled deriving (Generic, Show, Eq)
 
 -- | 'Text' alias for a display's name.
 type DisplayName = Text
 
 -- | Representation of a single DRM display.
-data Display = Display DisplayName Enabled Status Edid deriving (Show, Eq)
+data Display = Display DisplayName Enabled Status Edid deriving (Generic, Show, Eq)
 
 -- | Configured display configurations.
 data DisplayConfiguration =
@@ -107,6 +108,9 @@ getDisabledDisplay = find disabledDisplay
     disabledDisplay (Display _ Disabled Connected _) = True
     disabledDisplay _ = False
 
+-- | Get the current display configuration for this machine.
+--
+-- TODO this may not be the most flexible approach, consider alternatives?
 getDisplayConfiguration :: [Display] -> Maybe DisplayConfiguration
 getDisplayConfiguration displays = do
     activeDisplay <- getActiveDisplay displays

@@ -80,8 +80,10 @@ tests:
       - -rtsopts
       - -with-rtsopts=-N
       - -Wno-missing-signatures
+      - -Wno-orphans
     dependencies:
       - togglemon
+      - edid
       - smallcheck
       - smallcheck-series
       - tasty

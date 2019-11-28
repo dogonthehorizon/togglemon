@@ -1,5 +1,6 @@
 module ToggleMon.DisplayTest where
 
+import qualified Data.Edid                                as Edid
 import           Data.Maybe                               (fromMaybe)
 import           Data.Text                                (Text)
 import qualified Data.Text                                as T
@@ -10,6 +11,7 @@ import           Test.Tasty.HUnit                         (testCase, (@?=))
 import           Test.Tasty.SmallCheck                    (SmallCheckDepth (..),
                                                            testProperty)
 import           TestUtils
+import           ToggleMon.Display                        (Display (..))
 import qualified ToggleMon.Display                        as Display
 import           ToggleMon.Test.Smallcheck.Series.Display ()
 
@@ -54,8 +56,11 @@ toDisplay = testGroup
     "toDisplay"
     [ testCase "should properly serialize a known monitor" $ do
         let
-            expected =
-                Display.Display "card0-eDP-1" Display.Enabled Display.Connected
+            expected = Display
+                "card0-eDP-1"
+                Display.Enabled
+                Display.Connected
+                sampleEdid
 
         result <- runTestMonad $ Display.toDisplay "card0-eDP-1"
 
@@ -70,34 +75,33 @@ toDisplay = testGroup
 
 getActiveDisplay = testGroup
     "getActiveDisplay"
-    [ testProperty "should get the first active display if connected/enabled"
-          $ \(displays :: [Display.Display]) ->
-                let
-                    enabledDisplays = filter
-                        (\case
-                            Display.Display _ Display.Enabled Display.Connected
-                                -> True
-                            _ -> False
-                        )
-                        displays
-                in Display.getActiveDisplay displays == safeHead enabledDisplays
+    [ localOption (SmallCheckDepth 4)
+      $ testProperty "should get the first active display if connected/enabled"
+      $ \(displays :: [Display]) ->
+            let
+                enabledDisplays = filter
+                    (\case
+                        Display _ Display.Enabled Display.Connected _ -> True
+                        _ -> False
+                    )
+                    displays
+            in Display.getActiveDisplay displays == safeHead enabledDisplays
     ]
 
 getDisabledDisplay = testGroup
     "getDisabledDisplay"
-    [ testProperty "should get the first passive display if disabled/connected"
-          $ \(displays :: [Display.Display]) ->
-                let
-                    disabledDisplays = filter
-                        (\case
-                            Display.Display _ Display.Disabled Display.Connected
-                                -> True
-                            _ -> False
-                        )
-                        displays
-                in
-                    Display.getDisabledDisplay displays
-                        == safeHead disabledDisplays
+    [ localOption (SmallCheckDepth 4)
+      $ testProperty
+            "should get the first passive display if disabled/connected"
+      $ \(displays :: [Display]) ->
+            let
+                disabledDisplays = filter
+                    (\case
+                        Display _ Display.Disabled Display.Connected _ -> True
+                        _ -> False
+                    )
+                    displays
+            in Display.getDisabledDisplay displays == safeHead disabledDisplays
     ]
 
 toXrandrDisplayName = testGroup
@@ -123,8 +127,17 @@ buildXrandrCommand = testGroup
                 display             = displayName port
                 display'            = displayName port'
                 activePassiveConfig = Display.ActivePassive
-                    (Display.Display display Display.Enabled Display.Connected)
-                    (Display.Display display' Display.Disabled Display.Connected
+                    (Display
+                        display
+                        Display.Enabled
+                        Display.Connected
+                        Edid.empty
+                    )
+                    (Display
+                        display'
+                        Display.Disabled
+                        Display.Connected
+                        Edid.empty
                     )
                 xrandrCommand = Display.buildXrandrCommand activePassiveConfig
             in ("--output " <> port <> portNum <> " --off")

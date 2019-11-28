@@ -3,11 +3,17 @@ module TestUtils where
 
 import           Control.Exception    (Exception, throw)
 import           Control.Monad.Reader (runReaderT)
+import           Data.ByteString      (ByteString)
+import           Data.Edid            (Edid (..), EdidVersion (..),
+                                       Manufacturer (..))
+import qualified Data.Edid            as Edid
 import           Data.HashMap.Strict  (HashMap)
 import qualified Data.HashMap.Strict  as Map
 import           Data.List            (intercalate)
+import           Data.String          (IsString)
 import           Data.Text            (Text)
 import qualified Data.Text            as T
+import qualified Data.Text.Encoding   as TE
 import           Prelude              hiding (readFile)
 import           System.FilePath      (FilePath)
 import           ToggleMon.Display    (Display (..), Enabled (..), Status (..))
@@ -17,7 +23,7 @@ safeHead :: [a] -> Maybe a
 safeHead xs = if not (null xs) then Just $ head xs else Nothing
 
 defaultDisplay :: Display
-defaultDisplay = Display "" Disabled Disconnected
+defaultDisplay = Display "" Disabled Disconnected sampleEdid
 
 singleDisplay :: Text -> Text -> HashMap FilePath Text
 singleDisplay status enabled =
@@ -51,6 +57,26 @@ readFile fp =
             displayName
             displays
 
+sampleEdid :: Edid
+sampleEdid = Edid
+    { manufacturer      = Manufacturer "SHP" 5293
+    , serialNumber      = 0
+    , weekOfManufacture = 42
+    , yearOfManufacture = 2018
+    , version           = V1_4
+    }
+
+sampleEdidContents :: ByteString
+sampleEdidContents
+    = "\NUL\255\255\255\255\255\255\NULM\DLE\173\DC4\NUL\NUL\NUL\NUL*\FS\SOH\EOT\165\GS\DC1x\SO\222P\163TL\153&\SIPT\NUL\NUL\NUL\SOH\SOH\SOH\SOH\SOH\SOH\SOH\SOH\SOH\SOH\SOH\SOH\SOH\SOH\SOH\SOHM\208\NUL\160\240p>\128\&0 5\NUL&\165\DLE\NUL\NUL\CAN\164\166\NUL\160\240p>\128\&0 5\NUL&\165\DLE\NUL\NUL\CAN\NUL\NUL\NUL\254\NUL0R99K\128LQ133D1\NUL\NUL\NUL\NUL\NUL\STXA\ETX(\SOH\DC2\NUL\NUL\v\SOH\n  \NULA"
+
+-- | Always returns the same edid because reasons
+--
+-- Maybe when the `edid` package supports serialization we can take advantage
+-- of this better.
+readFileBs :: FilePath -> IO ByteString
+readFileBs _ = return sampleEdidContents
+
 data ExecException = ExecException deriving Show
 instance Exception ExecException
 
@@ -61,10 +87,11 @@ exec cmd    args _ = return $ intercalate "_" (cmd : args)
 
 mockEnv :: Env
 mockEnv = Env
-    { envDisplayBasePath = "root/"
-    , envListDirFn       = listDirectory
-    , envReadFileFn      = readFile
-    , envExecFn          = exec
+    { envDisplayBasePath  = "root/"
+    , envListDirFn        = listDirectory
+    , envReadFileFn       = readFile
+    , envExecFn           = exec
+    , envReadByteStringFn = readFileBs
     }
 
 runTestMonad :: ToggleMon a -> IO a
