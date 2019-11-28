@@ -86,7 +86,7 @@ readByteString path = do
 -- __ TODO __ should report IO failure
 exec
     :: (MonadReader env m, MonadIO m, HasExecFn env ExecuteAction)
-    => Text   -- ^ The full command to run (along with it's arguments)
+    => Text           -- ^ The full command to run (along with it's arguments)
     -> m (Maybe Text) -- ^ The output from executing this command
 exec command = do
     env <- ask

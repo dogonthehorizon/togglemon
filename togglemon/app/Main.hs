@@ -11,7 +11,7 @@ import qualified Data.Text.IO         as TIO
 import qualified System.Directory     as Dir
 import qualified System.Process       as Proc
 import qualified ToggleMon.Config     as Config
-import           ToggleMon.Display    (Display, DisplayConfiguration (..))
+import           ToggleMon.Display    (Display)
 import qualified ToggleMon.Display    as Display
 import qualified ToggleMon.IO         as ToggleIO
 import           ToggleMon.Monad
