@@ -31,10 +31,11 @@ singleDisplay status enabled =
 
 displays :: HashMap FilePath (HashMap FilePath Text)
 displays = Map.fromList
-    [ ("card0-eDP-1"      , singleDisplay "connected" "enabled")
-    , ("card0-DP-1"       , singleDisplay "connected" "disabled")
-    , ("card0-DP-2"       , singleDisplay "disconnected" "disabled")
-    , ("card0-DP-bad-data", singleDisplay "foo" "bar")
+    [ ("card0-eDP-1"       , singleDisplay "connected" "enabled")
+    , ("card0-DP-1"        , singleDisplay "connected" "disabled")
+    , ("card0-DP-2"        , singleDisplay "disconnected" "disabled")
+    , ("card0-DP-bad-data" , singleDisplay "foo" "bar")
+    , ("card0-DP-empty-dir", Map.empty)
     ]
 
 listDirectory :: FilePath -> IO [FilePath]

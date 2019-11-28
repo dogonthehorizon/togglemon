@@ -71,37 +71,55 @@ toDisplay = testGroup
     , testCase "should return nothing if status/enabled files have garbage" $ do
         result <- runTestMonad $ Display.toDisplay "card0-DP-bad-data"
         result @?= Nothing
+    , testCase "should return nothing if display directory is empty" $ do
+        result <- runTestMonad $ Display.toDisplay "card0-DP-empty-dir"
+        result @?= Nothing
     ]
 
 getActiveDisplay = testGroup
     "getActiveDisplay"
-    [ localOption (SmallCheckDepth 4)
-      $ testProperty "should get the first active display if connected/enabled"
-      $ \(displays :: [Display]) ->
-            let
-                enabledDisplays = filter
-                    (\case
-                        Display _ Display.Enabled Display.Connected _ -> True
-                        _ -> False
-                    )
-                    displays
-            in Display.getActiveDisplay displays == safeHead enabledDisplays
+    [ testCase "should get the first active display"
+        $ let
+              activeD =
+                  Display "1" Display.Enabled Display.Connected Edid.empty
+              inactiveD =
+                  Display "2" Display.Disabled Display.Connected Edid.empty
+              alsoActiveD =
+                  Display "3" Display.Enabled Display.Connected Edid.empty
+              displays = [activeD, inactiveD, alsoActiveD]
+          in
+              Display.getActiveDisplay displays @?= Just activeD
+    , testCase "should return nothing if no displays are given"
+    $   Display.getActiveDisplay []
+    @?= Nothing
+    , testCase "should return nothing if no active displays are found"
+        $ let
+              inactiveD =
+                  Display "2" Display.Disabled Display.Connected Edid.empty
+          in Display.getActiveDisplay [inactiveD] @?= Nothing
     ]
 
 getDisabledDisplay = testGroup
     "getDisabledDisplay"
-    [ localOption (SmallCheckDepth 4)
-      $ testProperty
-            "should get the first passive display if disabled/connected"
-      $ \(displays :: [Display]) ->
-            let
-                disabledDisplays = filter
-                    (\case
-                        Display _ Display.Disabled Display.Connected _ -> True
-                        _ -> False
-                    )
-                    displays
-            in Display.getDisabledDisplay displays == safeHead disabledDisplays
+    [ testCase "should get the first disabled display"
+        $ let
+              activeD =
+                  Display "1" Display.Enabled Display.Connected Edid.empty
+              inactiveD =
+                  Display "2" Display.Disabled Display.Connected Edid.empty
+              alsoActiveD =
+                  Display "3" Display.Enabled Display.Connected Edid.empty
+              displays = [activeD, inactiveD, alsoActiveD]
+          in
+              Display.getDisabledDisplay displays @?= Just inactiveD
+    , testCase "should return nothing if no displays are given"
+    $   Display.getDisabledDisplay []
+    @?= Nothing
+    , testCase "should return nothing if no inactive displays are found"
+        $ let
+              activeD =
+                  Display "1" Display.Enabled Display.Connected Edid.empty
+          in Display.getDisabledDisplay [activeD] @?= Nothing
     ]
 
 toXrandrDisplayName = testGroup
