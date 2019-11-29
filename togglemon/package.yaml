@@ -1,5 +1,5 @@
 name:        togglemon
-version:     0.1.0
+version:     0.2.0
 synopsis:    A simple program for toggling displays via xrandr.
 github:      dogonthehorizon/togglemon
 license:     MIT
