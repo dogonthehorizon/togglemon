@@ -62,3 +62,4 @@ cabal.project.local~
 *.cabal
 Session.vim
 *.tix
+stack.yaml.lock
