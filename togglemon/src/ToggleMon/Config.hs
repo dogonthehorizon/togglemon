@@ -11,8 +11,8 @@ import           Data.List                      (find)
 import           Data.Maybe                     (fromMaybe, isNothing)
 import           Data.Text                      (Text)
 import qualified Data.Text                      as T
-import           Data.Yaml                      (FromJSON, ToJSON,
-                                                 decodeFileEither, encodeFile)
+import           Data.Yaml                      (FromJSON, ToJSON)
+import qualified Data.Yaml                      as Yaml
 import           GHC.Generics                   (Generic)
 import           MemorableName                  (MemorableName, memorableName)
 import           System.Environment.XDG.BaseDir (getUserDataDir)
@@ -58,17 +58,22 @@ findInConfig cfg (Display _ _ _ displayEdid) = find
     (\(HardwareDisplay _ configEdid) -> displayEdid == configEdid)
     (knownDisplays cfg)
 
+-- TODO support when xdg-data-dir doesn't exist
+getConfigPath :: MonadIO m => m FilePath
+getConfigPath = do
+  dataDir <- liftIO $ getUserDataDir "togglemon"
+  return $ dataDir </> "known-displays.yaml"
+
 writeConfig :: InternalConfig -> IO ()
 writeConfig config = do
-    dataDir <- getUserDataDir "togglemon"
-    -- TODO support when xdg-data-dir doesn't exist
-    encodeFile (dataDir </> "known-displays.yaml") config
+    cfgPath <- getConfigPath
+    Yaml.encodeFile cfgPath config
 
 -- TODO better handle Either type
 readConfig :: MonadIO m => m (Either String InternalConfig)
 readConfig = do
-    dataDir <- liftIO $ getUserDataDir "togglemon"
-    content <- liftIO $ decodeFileEither (dataDir </> "known-displays.yaml")
+    cfgPath <- getConfigPath
+    content <- liftIO $ Yaml.decodeFileEither cfgPath
     return $ left show content
 
 generateName :: MonadIO m => InternalConfig -> m (Maybe MemorableName)

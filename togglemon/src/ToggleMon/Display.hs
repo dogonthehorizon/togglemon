@@ -106,7 +106,7 @@ getDisabledDisplay :: [Display] -> Maybe Display
 getDisabledDisplay = find disabledDisplay
   where
     disabledDisplay (Display _ Disabled Connected _) = True
-    disabledDisplay _ = False
+    disabledDisplay _                                = False
 
 -- | Get the current display configuration for this machine.
 --
