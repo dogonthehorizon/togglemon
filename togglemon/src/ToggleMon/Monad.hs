@@ -48,5 +48,5 @@ makeLensesWith camelCaseFields ''Env
 -- | The ToggleMon monad consisting of a reader context and IO.
 newtype ToggleMon a = ToggleMon {
   runToggleMon :: ReaderT Env IO a
-} deriving (Applicative, Functor, Monad, MonadIO, MonadReader Env)
+} deriving (Applicative, Functor, Monad, MonadIO, MonadReader Env, MonadFail)
 
