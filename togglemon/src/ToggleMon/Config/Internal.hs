@@ -1,4 +1,4 @@
-module ToggleMon.Config where
+module ToggleMon.Config.Internal where
 
 import           Control.Arrow                  (left)
 import           Control.Monad.Trans            (MonadIO, liftIO)
@@ -15,11 +15,10 @@ import           Data.Yaml                      (FromJSON, ToJSON)
 import qualified Data.Yaml                      as Yaml
 import           GHC.Generics                   (Generic)
 import           MemorableName                  (MemorableName, memorableName)
-import           System.Environment.XDG.BaseDir (getUserDataDir)
+import qualified System.Environment.XDG.BaseDir as XDG
 import           System.FilePath                ((</>))
+import qualified ToggleMon.Config.Util          as Util
 import           ToggleMon.Display              (Display (..))
-
-type Name = Text
 
 instance ToJSON Edid
 instance FromJSON Edid
@@ -49,32 +48,20 @@ defaultInternalConfig = InternalConfig []
 instance ToJSON InternalConfig
 instance FromJSON InternalConfig
 
-data ToggleMonConfig = ToggleMonConfig {
-    displayConfig :: [HardwareDisplay]
-  }
-
 findInConfig :: InternalConfig -> Display -> Maybe HardwareDisplay
 findInConfig cfg (Display _ _ _ displayEdid) = find
     (\(HardwareDisplay _ configEdid) -> displayEdid == configEdid)
     (knownDisplays cfg)
 
--- TODO support when xdg-data-dir doesn't exist
-getConfigPath :: MonadIO m => m FilePath
-getConfigPath = do
-  dataDir <- liftIO $ getUserDataDir "togglemon"
-  return $ dataDir </> "known-displays.yaml"
+getPath :: MonadIO m => m FilePath
+getPath = liftIO $
+  Util.getPath XDG.getUserDataDir "known-displays.yaml"
 
-writeConfig :: InternalConfig -> IO ()
-writeConfig config = do
-    cfgPath <- getConfigPath
-    Yaml.encodeFile cfgPath config
+writeConfig :: MonadIO m => InternalConfig -> m ()
+writeConfig config = getPath >>= Util.writeConfig config
 
--- TODO better handle Either type
 readConfig :: MonadIO m => m (Either String InternalConfig)
-readConfig = do
-    cfgPath <- getConfigPath
-    content <- liftIO $ Yaml.decodeFileEither cfgPath
-    return $ left show content
+readConfig = getPath >>= Util.readConfig
 
 generateName :: MonadIO m => InternalConfig -> m (Maybe MemorableName)
 generateName cfg =

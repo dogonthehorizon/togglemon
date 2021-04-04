@@ -5,6 +5,9 @@ Copyright : (c) Fernando Freire, 2019
 Maintainer : Fernando Freire
 Stability : stable
 -}
+
+{-# LANGUAGE NamedFieldPuns #-}
+
 module ToggleMon.Display where
 
 import           Control.Error.Util     (hush)
@@ -138,6 +141,14 @@ enableDisplay (Display name _ _ _) =
     , "--scale"
     , "2x2"
     ]
+
+---- | Construct an `xrandr` command segment to enable the given display.
+--enableDisplay :: Display -> Config -> [Text]
+--enableDisplay (Display name _ _ _) Config { position, scale } =
+  --[ "--output",
+  --toXrandrDisplayName name,
+  --"--pos", position, "--auto",
+  --"--scale", scale ]
 
 -- | Render a command segment into a single string.
 render :: [Text] -> Text

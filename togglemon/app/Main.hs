@@ -1,19 +1,19 @@
 module Main where
 
-import           Control.Error.Util   (hush)
-import           Control.Lens         ((^.))
-import           Control.Monad.Reader (ask, runReaderT)
-import           Control.Monad.Trans  (liftIO)
-import qualified Data.ByteString      as BS
-import           Data.Maybe           (catMaybes, fromMaybe)
-import qualified Data.Text            as T
-import qualified Data.Text.IO         as TIO
-import qualified System.Directory     as Dir
-import qualified System.Process       as Proc
-import qualified ToggleMon.Config     as Config
-import           ToggleMon.Display    (Display)
-import qualified ToggleMon.Display    as Display
-import qualified ToggleMon.IO         as ToggleIO
+import           Control.Error.Util        (hush)
+import           Control.Lens              ((^.))
+import           Control.Monad.Reader      (ask, runReaderT)
+import           Control.Monad.Trans       (liftIO)
+import qualified Data.ByteString           as BS
+import           Data.Maybe                (catMaybes, fromMaybe)
+import qualified Data.Text                 as T
+import qualified Data.Text.IO              as TIO
+import qualified System.Directory          as Dir
+import qualified System.Process            as Proc
+import qualified ToggleMon.Config.Internal as InternalConfig
+import           ToggleMon.Display         (Display)
+import qualified ToggleMon.Display         as Display
+import qualified ToggleMon.IO              as ToggleIO
 import           ToggleMon.Monad
 
 getDisplays :: ToggleMon [Display]
@@ -29,10 +29,10 @@ getDisplays = do
 -- TODO this return type needs to change, not currently doing anything with the Maybe
 updateConfig :: [Display] -> ToggleMon (Maybe ())
 updateConfig displays = do
-    currentConfig <- Config.readConfig
-    let cfg = fromMaybe Config.defaultInternalConfig (hush currentConfig)
-    updatedConfig <- Config.updateConfig cfg displays
-    liftIO . sequence $ Config.writeConfig <$> updatedConfig
+    currentConfig <- InternalConfig.readConfig
+    let cfg = fromMaybe InternalConfig.defaultInternalConfig (hush currentConfig)
+    updatedConfig <- InternalConfig.updateConfig cfg displays
+    liftIO . sequence $ InternalConfig.writeConfig <$> updatedConfig
 
 environment :: Env
 environment = Env
