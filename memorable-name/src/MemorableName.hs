@@ -1,21 +1,20 @@
 module MemorableName
   ( MemorableName (..),
     memorableName,
-    getRandUpTo,
-    nouns,
-    adjectives,
   )
 where
 
 import Control.Monad.Trans (MonadIO, liftIO)
+import Data.Text (Text)
+import qualified Data.Text as T
 import System.Random (getStdRandom, randomR)
 
 -- | Representation of a memorable name.
 data MemorableName
-  = MemorableName String String
+  = MemorableName Text Text
 
 instance Show MemorableName where
-  show (MemorableName a n) = a ++ "-" ++ n
+  show (MemorableName a n) = T.unpack $ a <> "-" <> n
 
 -- | Get a memorable name!
 memorableName :: MonadIO m => m MemorableName
@@ -30,13 +29,13 @@ getRandUpTo n
   | n <= 0 = return 0
   | otherwise = liftIO $ getStdRandom (randomR (0, n - 1))
 
-nouns :: [String]
+nouns :: [Text]
 nouns = officeSupplies
 
-adjectives :: [String]
+adjectives :: [Text]
 adjectives = animalAdjs
 
-officeSupplies :: [String]
+officeSupplies :: [Text]
 officeSupplies =
   [ "bulletin",
     "cabinet",
@@ -61,7 +60,7 @@ officeSupplies =
     "table"
   ]
 
-animalAdjs :: [String]
+animalAdjs :: [Text]
 animalAdjs =
   [ "anserine",
     "aquiline",
